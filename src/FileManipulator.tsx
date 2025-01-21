@@ -1,39 +1,51 @@
 import { type ChangeEvent, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
-export default function FileManipulator() {
+export default function ZipExtractor() {
   const [fileName, setFileName] = useState<string>('');
-  const [result, setResult] = useState<string>('');
+  const [files, setFiles] = useState<File[]>([]);
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file: File | undefined = event.target.files![0];
     if (file) {
       setFileName(file.name);
 
-      // Read the file as text (or ArrayBuffer if binary)
+      // Ensure the file is a .mcworld file
+      if (!file.name.endsWith('.mcworld')) {
+        alert('Please upload a .mcworld file!');
+        return;
+      }
+
+      // Read the file as a binary buffer
       const reader: FileReader = new FileReader();
       reader.onload = async (e) => {
-        const content = e.target!.result;
+        const binaryContent: Uint8Array = new Uint8Array(e.target!.result! as ArrayBuffer);
 
-        // Send the content to the Rust backend
+        // Send the binary content to the backend
         try {
-          const manipulatedContent: string = await invoke<string>('manipulate_file', { content });
-          setResult(manipulatedContent);
+          const extractedFiles: File[] = await invoke<File[]>('extract_zip', { zipData: Array.from(binaryContent) });
+          setFiles(extractedFiles);
         } catch (error) {
           console.error('Error invoking Rust command:', error);
         }
       };
-      reader.readAsText(file); // Or `reader.readAsArrayBuffer(file)` for binary files
+      reader.readAsArrayBuffer(file);
     }
   };
 
   return (
     <div>
-      <h1>File Manipulator</h1>
+      <h1>Zip Extractor</h1>
       <input type="file" onChange={handleFileChange} />
       <p>Selected File: {fileName}</p>
-      <h2>Manipulated Content</h2>
-      <pre>{result}</pre>
+      <h2>Extracted Files</h2>
+      <ul>
+        {files.map((file, index) => (
+          <li key={index}>
+            <strong>{file.name}</strong> ({file.size} bytes)
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
