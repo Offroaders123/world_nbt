@@ -103,7 +103,10 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
         // let key_string: String = String::from_utf8(key.clone()).map_err(|err| err.to_string())?;
         let key_string: String = match String::from_utf8(key.clone()) {
             Ok(value) => value,
-            Err(_) => key.iter().map(|byte| format!("{:02x?}", byte)).collect(),
+            Err(_) => {
+                let hex_string: String = key.iter().map(|byte| format!("{:02x?}", byte)).collect();
+                format!("0x{}", hex_string)
+            }
         };
         db_keys.push(key_string);
     }
