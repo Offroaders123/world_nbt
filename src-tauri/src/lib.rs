@@ -9,7 +9,7 @@ use rusty_leveldb::{DBIterator, LdbIterator, Options, DB};
 use serde::Serialize;
 use tauri::{command, generate_context, generate_handler, Builder};
 use tauri_plugin_opener::init;
-use tempfile::TempDir;
+use tempfile::{tempdir, TempDir};
 use zip::read::{ZipArchive, ZipFile};
 
 #[derive(Serialize)]
@@ -37,7 +37,7 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
 
     // Create a temporary directory to extract the files
     let temp_dir: TempDir =
-        tempfile::tempdir().map_err(|e| format!("Failed to create temp directory: {}", e))?;
+        tempdir().map_err(|e| format!("Failed to create temp directory: {}", e))?;
     let temp_path: &Path = temp_dir.path();
 
     // Prepare result containers
@@ -100,7 +100,12 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
             Some(entry) => entry,
             None => break,
         };
-        db_keys.push(String::from_utf8_lossy(&key).to_string());
+        // let key_string: String = String::from_utf8(key.clone()).map_err(|err| err.to_string())?;
+        let key_string: String = match String::from_utf8(key.clone()) {
+            Ok(value) => value,
+            Err(_) => key.iter().map(|byte| format!("{:02x?}", byte)).collect(),
+        };
+        db_keys.push(key_string);
     }
 
     // Close the database
