@@ -103,7 +103,10 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
         let key_string: String = String::from_utf8(key.clone())
             .map_err(|err| err.to_string())
             .and_then(|utf8_string| {
-                if utf8_string.is_ascii() {
+                if utf8_string
+                    .chars()
+                    .all(|char| char.is_ascii_alphanumeric() || char.is_ascii_punctuation())
+                {
                     Ok(utf8_string)
                 } else {
                     Err("Not an ASCII key".to_string())
