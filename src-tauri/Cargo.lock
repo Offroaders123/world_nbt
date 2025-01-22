@@ -5061,12 +5061,14 @@ dependencies = [
 name = "world_nbt"
 version = "0.1.0"
 dependencies = [
+ "miniz_oxide",
  "rusty-leveldb",
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
+ "tempfile",
  "zip",
 ]
 

@@ -1,12 +1,15 @@
-use std::env::temp_dir;
+mod mojang_options;
+
 use std::fs::{create_dir_all, File};
 use std::io::{copy, Cursor};
 use std::path::{Path, PathBuf};
 
+use crate::mojang_options::mojang_options;
 use rusty_leveldb::{DBIterator, LdbIterator, Options, DB};
 use serde::Serialize;
 use tauri::{command, generate_context, generate_handler, Builder};
 use tauri_plugin_opener::init;
+use tempfile::TempDir;
 use zip::read::{ZipArchive, ZipFile};
 
 #[derive(Serialize)]
@@ -33,9 +36,9 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
     };
 
     // Create a temporary directory to extract the files
-    let temp_dir: PathBuf = temp_dir();
-    // .map_err(|e| format!("Failed to create temp directory: {}", e))?;
-    let temp_path: &Path = temp_dir.as_path();
+    let temp_dir: TempDir =
+        tempfile::tempdir().map_err(|e| format!("Failed to create temp directory: {}", e))?;
+    let temp_path: &Path = temp_dir.path();
 
     // Prepare result containers
     let mut files: Vec<ExtractedFile> = Vec::new();
@@ -81,9 +84,12 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
         db_keys.push("LevelDB directory not found in the archive.".into());
     }
 
+    let mut options: Options = mojang_options();
+    options.create_if_missing = false;
+
     // Open the LevelDB database
-    let mut db: DB = DB::open(&leveldb_path, Options::default())
-        .map_err(|e| format!("Failed to open LevelDB: {}", e))?;
+    let mut db: DB =
+        DB::open(&leveldb_path, options).map_err(|e| format!("Failed to open LevelDB: {}", e))?;
 
     let mut iterator: DBIterator = db.new_iter().expect("Could not create database iterator");
     iterator.seek_to_first();
