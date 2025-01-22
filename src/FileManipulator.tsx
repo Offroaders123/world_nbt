@@ -41,20 +41,24 @@ export default function FileExtractor() {
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       <h2>Files in Archive:</h2>
-      <ul>
-        {files.map((file, index) => (
-          <li key={index}>
-            {file.name} ({file.size} bytes)
-          </li>
-        ))}
-      </ul>
+      <pre>
+        <ul>
+          {files.map((file, index) => (
+            <li key={index}>
+              {file.name} ({file.size} bytes)
+            </li>
+          ))}
+        </ul>
+      </pre>
 
       <h2>LevelDB Keys:</h2>
-      <ul>
-        {dbKeys.map((key, index) => (
-          <li key={index}>{key}</li>
-        ))}
-      </ul>
+      <pre>
+        <ul>
+          {dbKeys.map((key, index) => (
+            <li key={index}>{key}</li>
+          ))}
+        </ul>
+      </pre>
     </div>
   );
 }
