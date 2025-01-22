@@ -1,5 +1,6 @@
 import { type ChangeEvent, type ChangeEventHandler, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { FixedSizeList as List } from 'react-window'; // Import from react-window
 
 export interface ExtractionResult {
   files: ExtractedFile[];
@@ -36,6 +37,17 @@ export default function FileExtractor() {
     }
   };
 
+  // Render function for each row in the dbKeys list
+  const renderRow = ({ index, style }: { index: number, style: React.CSSProperties }) => {
+    return (
+      <pre>
+        <ul style={{ ...style, width: undefined }}>
+          <li>{dbKeys[index]}</li>
+        </ul>
+      </pre>
+    );
+  };
+
   return (
     <div>
       <h1>Zip Extractor</h1>
@@ -54,13 +66,14 @@ export default function FileExtractor() {
       </pre>
 
       <h2>LevelDB Keys:</h2>
-      <pre>
-        <ul>
-          {dbKeys.map((key, index) => (
-            <li key={index}>{key}</li>
-          ))}
-        </ul>
-      </pre>
+      <List
+        height={400} // Height of the list container (adjust as needed)
+        itemCount={dbKeys.length}
+        itemSize={35} // Height of each list item (adjust as needed)
+        width={"100%"} // Width of the list container (adjust as needed)
+      >
+        {renderRow}
+      </List>
     </div>
   );
 }
