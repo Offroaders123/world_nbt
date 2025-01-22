@@ -1,4 +1,4 @@
-import { type ChangeEvent, useState } from 'react';
+import { type ChangeEvent, type ChangeEventHandler, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
 export interface ExtractionResult {
@@ -12,11 +12,11 @@ export interface ExtractedFile {
 }
 
 export default function FileExtractor() {
-  const [files, setFiles] = useState<{ name: string; size: number }[]>([]);
+  const [files, setFiles] = useState<ExtractedFile[]>([]);
   const [dbKeys, setDbKeys] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange: ChangeEventHandler<HTMLInputElement> = async (event: ChangeEvent<HTMLInputElement>) => {
     const file: File | undefined = event.target.files![0];
     if (file) {
       try {
@@ -24,6 +24,8 @@ export default function FileExtractor() {
         const result: ExtractionResult = await invoke<ExtractionResult>("extract_zip", {
           zipData: Array.from(new Uint8Array(arrayBuffer))
         });
+
+        console.log(result);
 
         setFiles(result.files);
         setDbKeys(result.db_keys);
@@ -37,7 +39,7 @@ export default function FileExtractor() {
   return (
     <div>
       <h1>Zip Extractor</h1>
-      <input type="file" onChange={handleFileChange} accept=".zip" />
+      <input type="file" onInput={handleFileChange} accept=".mcworld" />
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       <h2>Files in Archive:</h2>
