@@ -5059,7 +5059,7 @@ dependencies = [
 
 [[package]]
 name = "world_nbt"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "miniz_oxide",
  "rusty-leveldb",
