@@ -1,49 +1,58 @@
 import { type ChangeEvent, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
-export default function ZipExtractor() {
-  const [fileName, setFileName] = useState<string>('');
-  const [files, setFiles] = useState<File[]>([]);
+export interface ExtractionResult {
+  files: ExtractedFile[];
+  db_keys: string[];
+}
+
+export interface ExtractedFile {
+  name: string;
+  size: number;
+}
+
+export default function FileExtractor() {
+  const [files, setFiles] = useState<{ name: string; size: number }[]>([]);
+  const [dbKeys, setDbKeys] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file: File | undefined = event.target.files![0];
     if (file) {
-      setFileName(file.name);
+      try {
+        const arrayBuffer: ArrayBuffer = await file.arrayBuffer();
+        const result: ExtractionResult = await invoke<ExtractionResult>("extract_zip", {
+          zipData: Array.from(new Uint8Array(arrayBuffer))
+        });
 
-      // Ensure the file is a .mcworld file
-      if (!file.name.endsWith('.mcworld')) {
-        alert('Please upload a .mcworld file!');
-        return;
+        setFiles(result.files);
+        setDbKeys(result.db_keys);
+        setError(null);
+      } catch (err) {
+        setError("Failed to process the file.");
       }
-
-      // Read the file as a binary buffer
-      const reader: FileReader = new FileReader();
-      reader.onload = async (e) => {
-        const binaryContent: Uint8Array = new Uint8Array(e.target!.result! as ArrayBuffer);
-
-        // Send the binary content to the backend
-        try {
-          const extractedFiles: File[] = await invoke<File[]>('extract_zip', { zipData: Array.from(binaryContent) });
-          setFiles(extractedFiles);
-        } catch (error) {
-          console.error('Error invoking Rust command:', error);
-        }
-      };
-      reader.readAsArrayBuffer(file);
     }
   };
 
   return (
     <div>
       <h1>Zip Extractor</h1>
-      <input type="file" onChange={handleFileChange} />
-      <p>Selected File: {fileName}</p>
-      <h2>Extracted Files</h2>
+      <input type="file" onChange={handleFileChange} accept=".zip" />
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
+      <h2>Files in Archive:</h2>
       <ul>
         {files.map((file, index) => (
           <li key={index}>
-            <strong>{file.name}</strong> ({file.size} bytes)
+            {file.name} ({file.size} bytes)
           </li>
+        ))}
+      </ul>
+
+      <h2>LevelDB Keys:</h2>
+      <ul>
+        {dbKeys.map((key, index) => (
+          <li key={index}>{key}</li>
         ))}
       </ul>
     </div>

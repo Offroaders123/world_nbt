@@ -1,5 +1,5 @@
 use std::env::temp_dir;
-use std::fs::{create_dir_all, read_dir, DirEntry, File};
+use std::fs::{create_dir_all, File};
 use std::io::{copy, Cursor};
 use std::path::{Path, PathBuf};
 
@@ -10,15 +10,19 @@ use tauri_plugin_opener::init;
 use zip::read::{ZipArchive, ZipFile};
 
 #[derive(Serialize)]
-struct GUIFile {
-    name: String,
-    size: usize,
-    content: Vec<u8>,
+struct ExtractionResult {
+    files: Vec<ExtractedFile>,
+    db_keys: Vec<String>,
 }
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+#[derive(Serialize)]
+struct ExtractedFile {
+    name: String,
+    size: usize,
+}
+
 #[command]
-fn extract_zip(zip_data: Vec<u8>) -> Result<Vec<GUIFile>, String> {
+fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
     // Create a cursor for the zip data
     let cursor: Cursor<Vec<u8>> = Cursor::new(zip_data);
 
@@ -33,6 +37,10 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<Vec<GUIFile>, String> {
     // .map_err(|e| format!("Failed to create temp directory: {}", e))?;
     let temp_path: &Path = temp_dir.as_path();
 
+    // Prepare result containers
+    let mut files: Vec<ExtractedFile> = Vec::new();
+    let mut db_keys: Vec<String> = Vec::new();
+
     // Extract files
     for i in 0..archive.len() {
         let mut file: ZipFile<'_> = match archive.by_index(i) {
@@ -40,23 +48,37 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<Vec<GUIFile>, String> {
             Err(err) => return Err(format!("Failed to access file in archive: {}", err)),
         };
 
-        let out_path: PathBuf = temp_path.join(file.name());
+        let file_name: String = file.name().to_string();
+
         if file.is_dir() {
-            create_dir_all(&out_path).map_err(|e| format!("Failed to create directory: {}", e))?;
-        } else {
-            if let Some(parent) = out_path.parent() {
-                create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
-            }
-            let mut outfile: File =
-                File::create(&out_path).map_err(|e| format!("Failed to create file: {}", e))?;
-            copy(&mut file, &mut outfile).map_err(|e| format!("Failed to write file: {}", e))?;
+            continue; // Skip directories
         }
+
+        // Collect file metadata
+        let size: usize = file.size() as usize;
+
+        files.push(ExtractedFile {
+            name: file_name.clone(),
+            size,
+        });
+
+        // Extract the file
+        let out_path: PathBuf = temp_path.join(&file_name);
+
+        if let Some(parent) = out_path.parent() {
+            create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
+        }
+
+        let mut outfile: File =
+            File::create(&out_path).map_err(|e| format!("Failed to create file: {}", e))?;
+
+        copy(&mut file, &mut outfile).map_err(|e| format!("Failed to write file: {}", e))?;
     }
 
     // Locate the LevelDB directory (e.g., "db")
     let leveldb_path: PathBuf = temp_path.join("db");
     if !leveldb_path.exists() {
-        return Err("LevelDB directory not found in the archive.".into());
+        db_keys.push("LevelDB directory not found in the archive.".into());
     }
 
     // Open the LevelDB database
@@ -72,34 +94,14 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<Vec<GUIFile>, String> {
             Some(entry) => entry,
             None => break,
         };
-        println!("Key: {}", String::from_utf8_lossy(&key));
+        db_keys.push(String::from_utf8_lossy(&key).to_string());
     }
 
     // Close the database
-    // db.close();
     drop(db);
 
-    // Collect file information (if required)
-    let mut files: Vec<GUIFile> = Vec::new();
-    for entry in read_dir(temp_path).map_err(|e| format!("Failed to read temp directory: {}", e))? {
-        let entry: DirEntry =
-            entry.map_err(|e| format!("Failed to read directory entry: {}", e))?;
-        let path: PathBuf = entry.path();
-        if path.is_file() {
-            let name: String = path.file_name().unwrap().to_string_lossy().to_string();
-            let size: usize = path
-                .metadata()
-                .map_err(|e| format!("Failed to get file metadata: {}", e))?
-                .len() as usize;
-            files.push(GUIFile {
-                name,
-                size,
-                content: vec![], // Skipping content for now
-            });
-        }
-    }
-
-    Ok(files)
+    // Return the result
+    Ok(ExtractionResult { files, db_keys })
 }
 
 #[cfg_attr(mobile, mobile_entry_point)]
