@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 // Define FileNode type
 export interface FileNode {
@@ -57,8 +57,9 @@ export default function WorldEditor({ files = [], dbKeys = [] }: WorldEditorProp
 
   // console.log(dbKeys);
 
-  useEffect(() => {
-  const dbFolder: FileNode = {
+  // Memoize the dbFolder to ensure it only updates when dbKeys changes
+  const dbFolder: FileNode = useMemo<FileNode>(() => {
+    return {
     name: 'db',
     type: 'folder',
     children: dbKeys.map((key) => ({
@@ -66,13 +67,16 @@ export default function WorldEditor({ files = [], dbKeys = [] }: WorldEditorProp
       type: 'file',
       content: undefined, // Content can be dynamically fetched later
     })),
-  };
+    };
+  }, [dbKeys]);
 
-    setWorldData([
-    ...files,
-    dbFolder,
-    ]);
-  }, [files, dbKeys]); // Recalculate worldData whenever files or dbKeys change
+  useEffect(() => {
+    // Combine files and dbFolder into worldData, but only if there's a change
+    const newWorldData: FileNode[] = [...files, dbFolder];
+    if (JSON.stringify(newWorldData) !== JSON.stringify(worldData)) {
+      setWorldData(newWorldData);
+    }
+  }, [files, dbFolder, worldData]);
 
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
