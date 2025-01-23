@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { FixedSizeList as List } from 'react-window';
 
 // Define FileNode type
 export interface FileNode {
@@ -27,7 +28,11 @@ function FileTree({ data, onSelect }: { data: FileNode[]; onSelect: (node: FileN
           <div onClick={() => toggleExpand(node.name)} style={{ cursor: 'pointer' }}>
             {isOpen ? '📂' : '📁'} {node.name}
           </div>
-          {isOpen && node.children && node.children.map(renderNode)}
+          {isOpen && node.children && node.name === 'db' ? (
+            <DbFolder children={node.children} onSelect={onSelect} />
+          ) : (
+            isOpen && node.children && node.children.map(renderNode)
+          )}
         </div>
       );
     }
@@ -44,6 +49,44 @@ function FileTree({ data, onSelect }: { data: FileNode[]; onSelect: (node: FileN
   };
 
   return <div>{data.map(renderNode)}</div>;
+};
+
+interface DbFolderProps {
+  children: FileNode[];
+  onSelect: (node: FileNode) => void;
+}
+
+function DbFolder({ children = [], onSelect }: DbFolderProps) {
+  // Entry height for the react-window list
+  const itemHeight: number = 30;
+
+  return (
+    <List
+      height={200} // Adjust this based on your UI
+      itemCount={children.length}
+      itemSize={itemHeight}
+      width="100%"
+    >
+      {({ index, style }) => {
+        const node: FileNode = children[index]!;
+        return (
+          <div
+            key={node.name}
+            style={{
+              ...style,
+              marginLeft: 20,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+            onClick={() => onSelect(node)}
+          >
+            📄 {node.name}
+          </div>
+        );
+      }}
+    </List>
+  );
 };
 
 export interface WorldEditorProps {
