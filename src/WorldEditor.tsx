@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // Define FileNode type
 export interface FileNode {
@@ -51,11 +51,13 @@ export interface WorldEditorProps {
   dbKeys: string[]; // List of LevelDB keys
 }
 
-export default function WorldEditor({ files, dbKeys }: WorldEditorProps) {
+export default function WorldEditor({ files = [], dbKeys = [] }: WorldEditorProps) {
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
+  const [worldData, setWorldData] = useState<FileNode[]>([]);
 
-  console.log(dbKeys);
+  // console.log(dbKeys);
 
+  useEffect(() => {
   const dbFolder: FileNode = {
     name: 'db',
     type: 'folder',
@@ -66,10 +68,11 @@ export default function WorldEditor({ files, dbKeys }: WorldEditorProps) {
     })),
   };
 
-  const worldData: FileNode[] = [
+    setWorldData([
     ...files,
     dbFolder,
-  ];
+    ]);
+  }, [files, dbKeys]); // Recalculate worldData whenever files or dbKeys change
 
   return (
     <div style={{ display: 'flex', height: '100vh' }}>

@@ -1,4 +1,4 @@
-import { type ChangeEvent, type ChangeEventHandler, useState } from 'react';
+import { type ChangeEvent, type ChangeEventHandler, useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import WorldEditor, { type FileNode } from './WorldEditor';
 
@@ -17,6 +17,12 @@ export default function FileExtractor() {
   const [dbKeys, setDbKeys] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    // Ensure dbKeys and files are always defined
+    setFiles([]);
+    setDbKeys([]);
+  }, []);
+
   const handleFileChange: ChangeEventHandler<HTMLInputElement> = async (event: ChangeEvent<HTMLInputElement>) => {
     const file: File | undefined = event.target.files![0];
     if (file) {
@@ -28,11 +34,13 @@ export default function FileExtractor() {
 
         console.log(result);
 
-        setFiles(result.files);
-        setDbKeys(result.db_keys);
+        setFiles(result.files || []); // Ensure it's always an array
+        setDbKeys(result.db_keys || []); // Ensure it's always an array
         setError(null);
       } catch (err) {
         setError("Failed to process the file.");
+        setFiles([]);
+        setDbKeys([]);
       }
     }
   };
@@ -49,6 +57,7 @@ export default function FileExtractor() {
       <input type="file" onInput={handleFileChange} accept=".mcworld" />
       {error && <p style={{ color: "red" }}>{error}</p>}
 
+      {/* Pass default empty arrays if dbKeys or files aren't ready */}
       <WorldEditor files={fileNodes} dbKeys={dbKeys} />
     </div>
   );
