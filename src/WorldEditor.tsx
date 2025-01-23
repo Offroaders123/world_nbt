@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 // Define FileNode type
-interface FileNode {
+export interface FileNode {
   name: string;
   type: 'file' | 'folder';
   children?: FileNode[];
@@ -46,33 +46,30 @@ function FileTree({ data, onSelect }: { data: FileNode[]; onSelect: (node: FileN
   return <div>{data.map(renderNode)}</div>;
 };
 
-export default function WorldEditor() {
-  const [worldData, setWorldData] = useState<FileNode[]>([]);
+export interface WorldEditorProps {
+  files: FileNode[]; // Array of file nodes
+  dbKeys: string[]; // List of LevelDB keys
+}
+
+export default function WorldEditor({ files, dbKeys }: WorldEditorProps) {
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
 
-  useEffect(() => {
-    // Fetch LevelDB keys or load the world structure
-    const fetchWorldData = async () => {
-      const dbKeys: string[] = await getLevelDBKeys(); // Your existing LevelDB function
-      const dbFolder: FileNode = {
-        name: 'db',
-        type: 'folder',
-        children: dbKeys.map((key: string) => ({
-          name: key,
-          type: 'file',
-          content: undefined, // Fetch content dynamically when needed
-        })),
-      };
+  console.log(dbKeys);
 
-      setWorldData([
-        { name: 'level.dat', type: 'file', content: '<binary data>' },
-        { name: 'player.dat', type: 'file', content: '<binary data>' },
-        dbFolder,
-      ]);
-    };
+  const dbFolder: FileNode = {
+    name: 'db',
+    type: 'folder',
+    children: dbKeys.map((key) => ({
+      name: key,
+      type: 'file',
+      content: undefined, // Content can be dynamically fetched later
+    })),
+  };
 
-    fetchWorldData();
-  }, []);
+  const worldData: FileNode[] = [
+    ...files,
+    dbFolder,
+  ];
 
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
@@ -100,9 +97,4 @@ export default function WorldEditor() {
       </div>
     </div>
   );
-};
-
-// Mock function for fetching LevelDB keys
-const getLevelDBKeys = async (): Promise<string[]> => {
-  return ['~local_player', 'BiomeData', 'scoreboard'];
 };

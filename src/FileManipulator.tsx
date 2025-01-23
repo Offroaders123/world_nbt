@@ -1,6 +1,6 @@
 import { type ChangeEvent, type ChangeEventHandler, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { FixedSizeList as List } from 'react-window'; // Import from react-window
+import WorldEditor, { type FileNode } from './WorldEditor';
 
 export interface ExtractionResult {
   files: ExtractedFile[];
@@ -37,16 +37,11 @@ export default function FileExtractor() {
     }
   };
 
-  // Render function for each row in the dbKeys list
-  const renderRow = ({ index, style }: { index: number, style: React.CSSProperties }) => {
-    return (
-      <pre>
-        <ul style={{ ...style, width: undefined }}>
-          <li>{dbKeys[index]}</li>
-        </ul>
-      </pre>
-    );
-  };
+  const fileNodes: FileNode[] = files.map((file) => ({
+    name: file.name,
+    type: 'file',
+    content: `${file.size} bytes`, // Placeholder content
+  }));
 
   return (
     <div>
@@ -54,26 +49,7 @@ export default function FileExtractor() {
       <input type="file" onInput={handleFileChange} accept=".mcworld" />
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      <h2>Files in Archive:</h2>
-      <pre>
-        <ul>
-          {files.map((file, index) => (
-            <li key={index}>
-              {file.name} ({file.size} bytes)
-            </li>
-          ))}
-        </ul>
-      </pre>
-
-      <h2>LevelDB Keys:</h2>
-      <List
-        height={400} // Height of the list container (adjust as needed)
-        itemCount={dbKeys.length}
-        itemSize={35} // Height of each list item (adjust as needed)
-        width={"100%"} // Width of the list container (adjust as needed)
-      >
-        {renderRow}
-      </List>
+      <WorldEditor files={fileNodes} dbKeys={dbKeys} />
     </div>
   );
 }
