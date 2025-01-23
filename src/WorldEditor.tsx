@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // Define FileNode type
 interface FileNode {
@@ -7,19 +7,6 @@ interface FileNode {
   children?: FileNode[];
   content?: string;
 };
-
-// Example world data
-const worldData: FileNode[] = [
-  { name: 'level.dat', type: 'file', content: '<binary data>' },
-  {
-    name: 'db',
-    type: 'folder',
-    children: [
-      { name: '~local_player', type: 'file', content: '<binary data>' },
-      { name: 'BiomeData', type: 'file', content: '<binary data>' },
-    ],
-  },
-];
 
 function FileTree({ data, onSelect }: { data: FileNode[]; onSelect: (node: FileNode) => void }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -60,7 +47,32 @@ function FileTree({ data, onSelect }: { data: FileNode[]; onSelect: (node: FileN
 };
 
 export default function WorldEditor() {
+  const [worldData, setWorldData] = useState<FileNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
+
+  useEffect(() => {
+    // Fetch LevelDB keys or load the world structure
+    const fetchWorldData = async () => {
+      const dbKeys: string[] = await getLevelDBKeys(); // Your existing LevelDB function
+      const dbFolder: FileNode = {
+        name: 'db',
+        type: 'folder',
+        children: dbKeys.map((key: string) => ({
+          name: key,
+          type: 'file',
+          content: undefined, // Fetch content dynamically when needed
+        })),
+      };
+
+      setWorldData([
+        { name: 'level.dat', type: 'file', content: '<binary data>' },
+        { name: 'player.dat', type: 'file', content: '<binary data>' },
+        dbFolder,
+      ]);
+    };
+
+    fetchWorldData();
+  }, []);
 
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
@@ -88,4 +100,9 @@ export default function WorldEditor() {
       </div>
     </div>
   );
+};
+
+// Mock function for fetching LevelDB keys
+const getLevelDBKeys = async (): Promise<string[]> => {
+  return ['~local_player', 'BiomeData', 'scoreboard'];
 };
