@@ -116,7 +116,7 @@ export default function WorldEditor({ files = [], dbKeys = [] }: WorldEditorProp
 
   useEffect(() => {
     // Combine files and dbFolder into worldData, but only if there's a change
-    const newWorldData: FileNode[] = [...files, dbFolder];
+    const newWorldData: FileNode[] = [...files.filter(entry => entry.name !== "db"), dbFolder];
     if (JSON.stringify(newWorldData) !== JSON.stringify(worldData)) {
       setWorldData(newWorldData);
     }

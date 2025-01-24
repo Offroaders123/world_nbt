@@ -41,6 +41,7 @@ export default function FileExtractor() {
 
         console.log(result);
 
+        // These need to be corrected or removed
         setFiles(result.root || []); // Ensure it's always an array
         setDbKeys(result.db_keys || []); // Ensure it's always an array
         setError(null);
@@ -62,7 +63,7 @@ export default function FileExtractor() {
   }));
   };
 
-  console.log(files);
+  // console.log(files);
 
   const fileNodes: FileNode[] = convertToNodes(files);
 
