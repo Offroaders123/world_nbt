@@ -1,6 +1,6 @@
 import { type ChangeEvent, type ChangeEventHandler, useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import WorldEditor, { type FileNode } from './WorldEditor';
+import WorldEditor, { type NodeDirectory, type NodeFile, type NodeEntry } from './WorldEditor';
 
 export interface ExtractionResult {
   root: ExtractedDirectory;
@@ -53,19 +53,25 @@ export default function FileExtractor() {
     }
   };
 
-  const convertToNodes = (files: ExtractedDirectory | null): FileNode[] => {
+  const convertToNodes = (files: ExtractedDirectory | null): NodeEntry[] => {
     if (!files) return [];
-    return files.children.map((file) => ({
+    return files.children.map((file): NodeEntry => 'children' in file ?
+  {
     name: file.name,
-    type: 'children' in file ? 'directory' : 'file',
-    content: 'children' in file ? undefined : `${file.size} bytes`, // Directories don't have content
-    children: 'children' in file ? convertToNodes(file) : undefined, // Recursively process directories
-  }));
+    type: 'directory',
+    children: convertToNodes(file), // Recursively process directories
+  } satisfies NodeDirectory :
+  {
+    name: file.name,
+    type: 'file',
+    content: `${file.size} bytes`, // Directories don't have content
+  } satisfies NodeFile
+);
   };
 
   // console.log(files);
 
-  const fileNodes: FileNode[] = convertToNodes(files);
+  const fileNodes: NodeEntry[] = convertToNodes(files);
 
   return (
     <div>

@@ -2,14 +2,21 @@ import { useState, useEffect, useMemo } from 'react';
 import { FixedSizeList as List } from 'react-window';
 
 // Define FileNode type
-export interface FileNode {
+export type NodeEntry = NodeDirectory | NodeFile;
+
+export interface NodeDirectory {
   name: string;
-  type: 'file' | 'directory';
-  children?: FileNode[]; // For directories
-  content?: string; // For files only
+  type: 'directory';
+  children: NodeEntry[]; // For directories
 };
 
-function FileTree({ data, onSelect }: { data: FileNode[]; onSelect: (node: FileNode) => void }) {
+export interface NodeFile {
+  name: string;
+  type: 'file';
+  content: string | undefined; // For files only
+};
+
+function FileTree({ data, onSelect }: { data: NodeEntry[]; onSelect: (node: NodeEntry) => void }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const toggleExpand = (name: string) => {
@@ -20,7 +27,7 @@ function FileTree({ data, onSelect }: { data: FileNode[]; onSelect: (node: FileN
     });
   };
 
-  const renderNode = (node: FileNode, parentPath = '') => {
+  const renderNode = (node: NodeEntry, parentPath = '') => {
     const fullPath: string = `${parentPath}/${node.name}`; // Full path for unique identification
     if (node.type === 'directory') {
       const isOpen: boolean = expanded.has(fullPath);
@@ -53,8 +60,8 @@ function FileTree({ data, onSelect }: { data: FileNode[]; onSelect: (node: FileN
 };
 
 interface DbFolderProps {
-  children: FileNode[];
-  onSelect: (node: FileNode) => void;
+  children: NodeEntry[];
+  onSelect: (node: NodeEntry) => void;
 }
 
 function DbFolder({ children = [], onSelect }: DbFolderProps) {
@@ -69,7 +76,7 @@ function DbFolder({ children = [], onSelect }: DbFolderProps) {
       width="100%"
     >
       {({ index, style }) => {
-        const node: FileNode = children[index]!;
+        const node: NodeEntry = children[index]!;
         return (
           <div
             key={node.name}
@@ -91,18 +98,18 @@ function DbFolder({ children = [], onSelect }: DbFolderProps) {
 };
 
 export interface WorldEditorProps {
-  files: FileNode[]; // Array of file nodes
+  files: NodeEntry[]; // Array of file nodes
   dbKeys: string[]; // List of LevelDB keys
 }
 
 export default function WorldEditor({ files = [], dbKeys = [] }: WorldEditorProps) {
-  const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
-  const [worldData, setWorldData] = useState<FileNode[]>([]);
+  const [selectedFile, setSelectedFile] = useState<NodeEntry | null>(null);
+  const [worldData, setWorldData] = useState<NodeEntry[]>([]);
 
   // console.log(dbKeys);
 
   // Memoize the dbFolder to ensure it only updates when dbKeys changes
-  const dbFolder: FileNode = useMemo<FileNode>((): FileNode => {
+  const dbFolder: NodeEntry = useMemo<NodeEntry>((): NodeEntry => {
     return {
     name: 'db',
     type: 'directory',
@@ -116,10 +123,12 @@ export default function WorldEditor({ files = [], dbKeys = [] }: WorldEditorProp
 
   useEffect(() => {
     // Combine files and dbFolder into worldData, but only if there's a change
-    const newWorldData: FileNode[] = [...files.filter(entry => entry.name !== "db"), dbFolder];
+    const newWorldData: NodeEntry[] = [...files.filter(entry => entry.name !== "db"), dbFolder];
     if (JSON.stringify(newWorldData) !== JSON.stringify(worldData)) {
       setWorldData(newWorldData);
     }
+
+    console.log(newWorldData);
   }, [files, dbFolder, worldData]);
 
   return (
@@ -136,7 +145,7 @@ export default function WorldEditor({ files = [], dbKeys = [] }: WorldEditorProp
         {selectedFile ? (
           <div>
             <h4>{selectedFile.name}</h4>
-            {selectedFile.content ? (
+            {"content" in selectedFile ? (
               <pre>{selectedFile.content}</pre>
             ) : (
               <p>This is a folder. Select a file to view its contents.</p>
