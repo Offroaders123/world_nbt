@@ -1,7 +1,7 @@
-# Tauri + React + Typescript
+# world_nbt
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+An NBT editor GUI for Minecraft world data!
 
-## Recommended IDE Setup
+This is going to be a spin off similar to my player-editor project, but instead using a GUI to edit NBT data for worlds. I am going to start with Bedrock, and possibly expand to the other editions next too.
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+I'm also trying to work on "move fast, break when necessary". Made that quote up now. I want to test things, find out what works, what doesn't, then build better more secure versions of those concepts once the ugly parts have been discovered and worked through.
