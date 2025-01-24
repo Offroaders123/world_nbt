@@ -14,8 +14,21 @@ use zip::read::{ZipArchive, ZipFile};
 
 #[derive(Serialize)]
 struct ExtractionResult {
-    files: Vec<ExtractedFile>,
+    root: ExtractedDirectory,
     db_keys: Vec<String>,
+}
+
+#[derive(Serialize)]
+struct ExtractedDirectory {
+    name: String,
+    entries: Vec<ExtractedEntry>,
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum ExtractedEntry {
+    File(ExtractedFile),
+    Directory(ExtractedDirectory),
 }
 
 #[derive(Serialize)]
@@ -40,8 +53,40 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
         tempdir().map_err(|e| format!("Failed to create temp directory: {}", e))?;
     let temp_path: &Path = temp_dir.path();
 
-    // Prepare result containers
-    let mut files: Vec<ExtractedFile> = Vec::new();
+    // Use a root directory to build the tree
+    let mut root: ExtractedDirectory = ExtractedDirectory {
+        name: String::from("root"),
+        entries: Vec::new(),
+    };
+
+    // Helper function to insert an entry into the directory structure
+    fn insert_entry(dir: &mut ExtractedDirectory, path_parts: &[&str], entry: ExtractedEntry) {
+        if path_parts.is_empty() {
+            return;
+        }
+        let current_part: &str = path_parts[0];
+        if path_parts.len() == 1 {
+            // Base case: Add the file or directory
+            dir.entries.push(entry);
+        } else {
+            // Recursive case: Find or create the subdirectory
+            if let Some(ExtractedEntry::Directory(sub_dir)) = dir
+                .entries
+                .iter_mut()
+                .find(|e| matches!(e, ExtractedEntry::Directory(d) if d.name == current_part))
+            {
+                insert_entry(sub_dir, &path_parts[1..], entry);
+            } else {
+                let mut new_dir: ExtractedDirectory = ExtractedDirectory {
+                    name: current_part.to_string(),
+                    entries: Vec::new(),
+                };
+                insert_entry(&mut new_dir, &path_parts[1..], entry);
+                dir.entries.push(ExtractedEntry::Directory(new_dir));
+            }
+        }
+    }
+
     let mut db_keys: Vec<String> = Vec::new();
 
     // Extract files
@@ -52,6 +97,7 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
         };
 
         let file_name: String = file.name().to_string();
+        let path_parts: Vec<&str> = file_name.split('/').collect(); // Split path by directory separators
 
         if file.is_dir() {
             continue; // Skip directories
@@ -60,10 +106,13 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
         // Collect file metadata
         let size: usize = file.size() as usize;
 
-        files.push(ExtractedFile {
-            name: file_name.clone(),
+        let file_entry: ExtractedEntry = ExtractedEntry::File(ExtractedFile {
+            name: path_parts.last().unwrap().to_string(),
             size,
         });
+
+        // Insert the file into the directory structure
+        insert_entry(&mut root, &path_parts, file_entry);
 
         // Extract the file
         let out_path: PathBuf = temp_path.join(&file_name);
@@ -123,7 +172,7 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
     drop(db);
 
     // Return the result
-    Ok(ExtractionResult { files, db_keys })
+    Ok(ExtractionResult { root, db_keys })
 }
 
 #[cfg_attr(mobile, mobile_entry_point)]

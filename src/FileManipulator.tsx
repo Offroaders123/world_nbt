@@ -10,6 +10,8 @@ export interface ExtractionResult {
 export interface ExtractedFile {
   name: string;
   size: number;
+  isDirectory: boolean; // New field
+  children?: ExtractedFile[]; // For directories
 }
 
 export default function FileExtractor() {
@@ -45,11 +47,15 @@ export default function FileExtractor() {
     }
   };
 
-  const fileNodes: FileNode[] = files.map((file) => ({
+  const convertToNodes = (files: ExtractedFile[]): FileNode[] =>
+    files.map((file) => ({
     name: file.name,
-    type: 'file',
-    content: `${file.size} bytes`, // Placeholder content
+    type: file.isDirectory ? 'directory' : 'file',
+    content: file.isDirectory ? undefined : `${file.size} bytes`, // Directories don't have content
+    children: file.isDirectory ? convertToNodes(file.children || []) : undefined, // Recursively process directories
   }));
+
+  const fileNodes: FileNode[] = convertToNodes(files);
 
   return (
     <div>

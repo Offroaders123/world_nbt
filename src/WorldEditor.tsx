@@ -4,9 +4,9 @@ import { FixedSizeList as List } from 'react-window';
 // Define FileNode type
 export interface FileNode {
   name: string;
-  type: 'file' | 'folder';
-  children?: FileNode[];
-  content?: string;
+  type: 'file' | 'directory';
+  children?: FileNode[]; // For directories
+  content?: string; // For files only
 };
 
 function FileTree({ data, onSelect }: { data: FileNode[]; onSelect: (node: FileNode) => void }) {
@@ -21,7 +21,7 @@ function FileTree({ data, onSelect }: { data: FileNode[]; onSelect: (node: FileN
   };
 
   const renderNode = (node: FileNode) => {
-    if (node.type === 'folder') {
+    if (node.type === 'directory') {
       const isOpen: boolean = expanded.has(node.name);
       return (
         <div key={node.name} style={{ marginLeft: 20 }}>
@@ -101,10 +101,10 @@ export default function WorldEditor({ files = [], dbKeys = [] }: WorldEditorProp
   // console.log(dbKeys);
 
   // Memoize the dbFolder to ensure it only updates when dbKeys changes
-  const dbFolder: FileNode = useMemo<FileNode>(() => {
+  const dbFolder: FileNode = useMemo<FileNode>((): FileNode => {
     return {
     name: 'db',
-    type: 'folder',
+    type: 'directory',
     children: dbKeys.map((key) => ({
       name: key,
       type: 'file',
