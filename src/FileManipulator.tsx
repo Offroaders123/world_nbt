@@ -3,25 +3,30 @@ import { invoke } from '@tauri-apps/api/core';
 import WorldEditor, { type FileNode } from './WorldEditor';
 
 export interface ExtractionResult {
-  files: ExtractedFile[];
+  root: ExtractedDirectory;
   db_keys: string[];
+}
+
+export type ExtractedEntry = ExtractedDirectory | ExtractedFile;
+
+export interface ExtractedDirectory {
+  name: string;
+  children: ExtractedEntry[];
 }
 
 export interface ExtractedFile {
   name: string;
   size: number;
-  isDirectory: boolean; // New field
-  children?: ExtractedFile[]; // For directories
 }
 
 export default function FileExtractor() {
-  const [files, setFiles] = useState<ExtractedFile[]>([]);
+  const [files, setFiles] = useState<ExtractedDirectory | null>(null);
   const [dbKeys, setDbKeys] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Ensure dbKeys and files are always defined
-    setFiles([]);
+    setFiles(null);
     setDbKeys([]);
   }, []);
 
@@ -36,24 +41,28 @@ export default function FileExtractor() {
 
         console.log(result);
 
-        setFiles(result.files || []); // Ensure it's always an array
+        setFiles(result.root || []); // Ensure it's always an array
         setDbKeys(result.db_keys || []); // Ensure it's always an array
         setError(null);
       } catch (err) {
         setError("Failed to process the file.");
-        setFiles([]);
+        setFiles(null);
         setDbKeys([]);
       }
     }
   };
 
-  const convertToNodes = (files: ExtractedFile[]): FileNode[] =>
-    files.map((file) => ({
+  const convertToNodes = (files: ExtractedDirectory | null): FileNode[] => {
+    if (!files) return [];
+    return files.children.map((file) => ({
     name: file.name,
-    type: file.isDirectory ? 'directory' : 'file',
-    content: file.isDirectory ? undefined : `${file.size} bytes`, // Directories don't have content
-    children: file.isDirectory ? convertToNodes(file.children || []) : undefined, // Recursively process directories
+    type: 'children' in file ? 'directory' : 'file',
+    content: 'children' in file ? undefined : `${file.size} bytes`, // Directories don't have content
+    children: 'children' in file ? convertToNodes(file) : undefined, // Recursively process directories
   }));
+  };
+
+  console.log(files);
 
   const fileNodes: FileNode[] = convertToNodes(files);
 
