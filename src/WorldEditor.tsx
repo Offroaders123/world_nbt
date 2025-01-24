@@ -20,18 +20,19 @@ function FileTree({ data, onSelect }: { data: FileNode[]; onSelect: (node: FileN
     });
   };
 
-  const renderNode = (node: FileNode) => {
+  const renderNode = (node: FileNode, parentPath = '') => {
+    const fullPath: string = `${parentPath}/${node.name}`; // Full path for unique identification
     if (node.type === 'directory') {
-      const isOpen: boolean = expanded.has(node.name);
+      const isOpen: boolean = expanded.has(fullPath);
       return (
-        <div key={node.name} style={{ marginLeft: 20 }}>
-          <div onClick={() => toggleExpand(node.name)} style={{ cursor: 'pointer' }}>
+        <div key={fullPath} style={{ marginLeft: 20 }}>
+          <div onClick={() => toggleExpand(fullPath)} style={{ cursor: 'pointer' }}>
             {isOpen ? '📂' : '📁'} {node.name}
           </div>
           {isOpen && node.children && node.name === 'db' ? (
             <DbFolder children={node.children} onSelect={onSelect} />
           ) : (
-            isOpen && node.children && node.children.map(renderNode)
+            isOpen && node.children && node.children.map((child) => renderNode(child, fullPath))
           )}
         </div>
       );
@@ -39,7 +40,7 @@ function FileTree({ data, onSelect }: { data: FileNode[]; onSelect: (node: FileN
 
     return (
       <div
-        key={node.name}
+        key={fullPath}
         style={{ marginLeft: 20, cursor: 'pointer' }}
         onClick={() => onSelect(node)}
       >
@@ -48,7 +49,7 @@ function FileTree({ data, onSelect }: { data: FileNode[]; onSelect: (node: FileN
     );
   };
 
-  return <div>{data.map(renderNode)}</div>;
+  return <div>{data.map((node) => renderNode(node))}</div>;
 };
 
 interface DbFolderProps {
