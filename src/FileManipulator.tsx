@@ -4,7 +4,7 @@ import WorldEditor, { type NodeDirectory, type NodeFile, type NodeEntry } from '
 
 export interface ExtractionResult {
   root: ExtractedDirectory;
-  db_keys: string[];
+  db_keys: ExtractedFile[];
 }
 
 export type ExtractedEntry = ExtractedDirectory | ExtractedFile;
@@ -21,7 +21,7 @@ export interface ExtractedFile {
 
 export default function FileExtractor() {
   const [files, setFiles] = useState<ExtractedDirectory | null>(null);
-  const [dbKeys, setDbKeys] = useState<string[]>([]);
+  const [dbKeys, setDbKeys] = useState<ExtractedFile[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -72,6 +72,11 @@ export default function FileExtractor() {
   // console.log(files);
 
   const fileNodes: NodeEntry[] = convertToNodes(files);
+  const dbNodes: NodeFile[] = dbKeys.map(({ name, size }): NodeFile => ({
+    name,
+    type: 'file',
+    content: `${size} bytes`
+  }));
 
   return (
     <div>
@@ -80,7 +85,7 @@ export default function FileExtractor() {
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {/* Pass default empty arrays if dbKeys or files aren't ready */}
-      <WorldEditor files={fileNodes} dbKeys={dbKeys} />
+      <WorldEditor files={fileNodes} dbKeys={dbNodes} />
     </div>
   );
 }

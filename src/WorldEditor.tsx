@@ -99,7 +99,7 @@ function DbFolder({ children = [], onSelect }: DbFolderProps) {
 
 export interface WorldEditorProps {
   files: NodeEntry[]; // Array of file nodes
-  dbKeys: string[]; // List of LevelDB keys
+  dbKeys: NodeFile[]; // List of LevelDB keys
 }
 
 export default function WorldEditor({ files = [], dbKeys = [] }: WorldEditorProps) {
@@ -113,11 +113,7 @@ export default function WorldEditor({ files = [], dbKeys = [] }: WorldEditorProp
     return {
     name: 'db',
     type: 'directory',
-    children: dbKeys.map((key) => ({
-      name: key,
-      type: 'file',
-      content: undefined, // Content can be dynamically fetched later
-    })),
+    children: dbKeys,
     };
   }, [dbKeys]);
 

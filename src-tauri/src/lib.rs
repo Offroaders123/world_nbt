@@ -15,7 +15,7 @@ use zip::read::{ZipArchive, ZipFile};
 #[derive(Serialize)]
 struct ExtractionResult {
     root: ExtractedDirectory,
-    db_keys: Vec<String>,
+    db_keys: Vec<ExtractedFile>,
 }
 
 #[derive(Serialize)]
@@ -87,7 +87,7 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
         }
     }
 
-    let mut db_keys: Vec<String> = Vec::new();
+    let mut db_keys: Vec<ExtractedFile> = Vec::new();
 
     // Extract files
     for i in 0..archive.len() {
@@ -129,9 +129,6 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
 
     // Locate the LevelDB directory (e.g., "db")
     let leveldb_path: PathBuf = temp_path.join("db");
-    if !leveldb_path.exists() {
-        db_keys.push("LevelDB directory not found in the archive.".into());
-    }
 
     let mut options: Options = mojang_options();
     options.create_if_missing = false;
@@ -145,7 +142,7 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
 
     // Log the keys
     while iterator.valid() {
-        let (key, _): (Vec<u8>, Vec<u8>) = match iterator.next() {
+        let (key, value): (Vec<u8>, Vec<u8>) = match iterator.next() {
             Some(entry) => entry,
             None => break,
         };
@@ -165,7 +162,11 @@ fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
                 let hex_string: String = key.iter().map(|byte| format!("{:02x?}", byte)).collect();
                 format!("0x{}", hex_string)
             });
-        db_keys.push(key_string);
+        let size: usize = value.len();
+        db_keys.push(ExtractedFile {
+            name: key_string,
+            size,
+        });
     }
 
     // Close the database
