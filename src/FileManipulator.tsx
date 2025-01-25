@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import WorldEditor, { type NodeDirectory, type NodeFile, type NodeEntry } from './WorldEditor';
 
 export interface ExtractionResult {
-  root: ExtractedDirectory;
+  root: Omit<ExtractedDirectory, "type">;
   db_keys: ExtractedFile[];
 }
 
@@ -11,11 +11,13 @@ export type ExtractedEntry = ExtractedDirectory | ExtractedFile;
 
 export interface ExtractedDirectory {
   name: string;
+  type: 'directory';
   children: ExtractedEntry[];
 }
 
 export interface ExtractedFile {
   name: string;
+  type: 'file';
   size: number;
 }
 
@@ -41,9 +43,8 @@ export default function FileExtractor() {
 
         console.log(result);
 
-        // These need to be corrected or removed
-        setFiles(result.root || []); // Ensure it's always an array
-        setDbKeys(result.db_keys || []); // Ensure it's always an array
+        setFiles({ ...result.root, type: "directory" });
+        setDbKeys(result.db_keys);
         setError(null);
       } catch (err) {
         setError("Failed to process the file.");

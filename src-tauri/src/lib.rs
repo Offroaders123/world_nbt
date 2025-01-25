@@ -25,7 +25,8 @@ struct ExtractedDirectory {
 }
 
 #[derive(Serialize)]
-#[serde(untagged)]
+#[serde(tag = "type")]
+#[serde(rename_all = "snake_case")]
 enum ExtractedEntry {
     File(ExtractedFile),
     Directory(ExtractedDirectory),
