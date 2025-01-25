@@ -13,7 +13,7 @@ export interface NodeDirectory {
 export interface NodeFile {
   name: string;
   type: 'file';
-  content: string | undefined; // For files only
+  size: number; // For files only
 };
 
 function FileTree({ data, onSelect }: { data: NodeEntry[]; onSelect: (node: NodeEntry) => void }) {
@@ -141,8 +141,8 @@ export default function WorldEditor({ files = [], dbKeys = [] }: WorldEditorProp
         {selectedFile ? (
           <div>
             <h4>{selectedFile.name}</h4>
-            {"content" in selectedFile ? (
-              <pre>{selectedFile.content}</pre>
+            {"size" in selectedFile ? (
+              <pre>{selectedFile.size} bytes</pre>
             ) : (
               <p>This is a folder. Select a file to view its contents.</p>
             )}

@@ -64,7 +64,7 @@ export default function FileExtractor() {
   {
     name: file.name,
     type: 'file',
-    content: `${file.size} bytes`, // Directories don't have content
+    size: file.size, // Directories don't have content
   } satisfies NodeFile
 );
   };
@@ -75,7 +75,7 @@ export default function FileExtractor() {
   const dbNodes: NodeFile[] = dbKeys.map(({ name, size }): NodeFile => ({
     name,
     type: 'file',
-    content: `${size} bytes`
+    size
   }));
 
   return (
