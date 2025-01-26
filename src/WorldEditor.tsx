@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { FixedSizeList as List } from 'react-window';
 
 // Define FileNode type
@@ -19,15 +19,15 @@ export interface NodeFile {
 function FileTree({ data, onSelect }: { data: NodeEntry[]; onSelect: (node: NodeEntry) => void }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  const toggleExpand = (name: string) => {
+  const toggleExpand = useCallback((name: string) => {
     setExpanded((prev) => {
       const newSet: Set<string> = new Set(prev);
       newSet.has(name) ? newSet.delete(name) : newSet.add(name);
       return newSet;
     });
-  };
+  }, []);
 
-  const renderNode = (node: NodeEntry, parentPath = '') => {
+  const renderNode = useCallback((node: NodeEntry, parentPath = '') => {
     const fullPath: string = `${parentPath}/${node.name}`; // Full path for unique identification
     if (node.type === 'directory') {
       const isOpen: boolean = expanded.has(fullPath);
@@ -54,7 +54,7 @@ function FileTree({ data, onSelect }: { data: NodeEntry[]; onSelect: (node: Node
         📄 {node.name}
       </div>
     );
-  };
+  }, [expanded]);
 
   return <div>{data.map((node) => renderNode(node))}</div>;
 };

@@ -1,4 +1,4 @@
-import { type ChangeEvent, type ChangeEventHandler, useState, useEffect } from 'react';
+import { type ChangeEvent, type ChangeEventHandler, useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import WorldEditor, { type NodeDirectory, type NodeFile, type NodeEntry } from './WorldEditor';
 
@@ -32,7 +32,7 @@ export default function FileExtractor() {
     setDbKeys([]);
   }, []);
 
-  const handleFileChange: ChangeEventHandler<HTMLInputElement> = async (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange: ChangeEventHandler<HTMLInputElement> = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const file: File | undefined = event.target.files![0];
     if (file) {
       try {
@@ -51,9 +51,9 @@ export default function FileExtractor() {
         setDbKeys([]);
       }
     }
-  };
+  }, []);
 
-  const convertToNodes = (files: ExtractedDirectory | null): NodeEntry[] => {
+  const convertToNodes = useCallback((files: ExtractedDirectory | null): NodeEntry[] => {
     if (!files) return [];
     return files.children.map((file): NodeEntry => 'children' in file ?
   {
@@ -67,7 +67,7 @@ export default function FileExtractor() {
     size: file.size, // Directories don't have content
   } satisfies NodeFile
 );
-  };
+  }, []);
 
   // console.log(files);
 
