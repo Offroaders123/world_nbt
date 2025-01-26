@@ -37,9 +37,7 @@ export default function FileExtractor() {
     if (file) {
       try {
         const arrayBuffer: ArrayBuffer = await file.arrayBuffer();
-        const result: ExtractionResult = await invoke<ExtractionResult>("extract_zip", {
-          zipData: Array.from(new Uint8Array(arrayBuffer))
-        });
+        const result: ExtractionResult = await extract_zip(arrayBuffer);
 
         console.log(result);
 
@@ -47,7 +45,8 @@ export default function FileExtractor() {
         setDbKeys(result.db_keys);
         setError(null);
       } catch (err) {
-        setError("Failed to process the file.");
+        setError(`Failed to process the file: ${err}`);
+        console.error(err);
         setFiles(null);
         setDbKeys([]);
       }
@@ -89,4 +88,13 @@ export default function FileExtractor() {
       <WorldEditor files={fileNodes} dbKeys={dbNodes} />
     </div>
   );
+}
+
+/**
+ * Only usable in a Tauri context, will reject otherwise.
+ */
+async function extract_zip(arrayBuffer: ArrayBuffer): Promise<ExtractionResult> {
+  return await invoke<ExtractionResult>("extract_zip", {
+    zipData: Array.from(new Uint8Array(arrayBuffer))
+  })
 }
