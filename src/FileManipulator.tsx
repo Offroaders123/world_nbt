@@ -1,4 +1,4 @@
-import { type ChangeEvent, type ChangeEventHandler, useState, useEffect, useCallback } from 'react';
+import { type ChangeEvent, type ChangeEventHandler, useState, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import WorldEditor, { type NodeDirectory, type NodeFile, type NodeEntry } from './WorldEditor';
 
@@ -25,12 +25,6 @@ export default function FileExtractor() {
   const [files, setFiles] = useState<ExtractedDirectory | null>(null);
   const [dbKeys, setDbKeys] = useState<ExtractedFile[]>([]);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Ensure dbKeys and files are always defined
-    setFiles(null);
-    setDbKeys([]);
-  }, []);
 
   const handleFileChange: ChangeEventHandler<HTMLInputElement> = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const file: File | undefined = event.target.files![0];
