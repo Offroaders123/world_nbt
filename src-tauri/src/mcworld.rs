@@ -36,7 +36,7 @@ struct ExtractedFile {
 }
 
 #[command]
-pub fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
+pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
     // Create a cursor for the zip data
     let cursor: Cursor<Vec<u8>> = Cursor::new(zip_data);
 

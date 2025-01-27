@@ -31,7 +31,7 @@ export default function FileExtractor() {
     if (file) {
       try {
         const arrayBuffer: ArrayBuffer = await file.arrayBuffer();
-        const result: ExtractionResult = await extract_zip(arrayBuffer);
+        const result: ExtractionResult = await open_mcworld(arrayBuffer);
 
         console.log(result);
 
@@ -87,8 +87,8 @@ export default function FileExtractor() {
 /**
  * Only usable in a Tauri context, will reject otherwise.
  */
-async function extract_zip(arrayBuffer: ArrayBuffer): Promise<ExtractionResult> {
-  return await invoke<ExtractionResult>("extract_zip", {
+async function open_mcworld(arrayBuffer: ArrayBuffer): Promise<ExtractionResult> {
+  return await invoke<ExtractionResult>("open_mcworld", {
     zipData: Array.from(new Uint8Array(arrayBuffer))
   })
 }

@@ -1,7 +1,7 @@
 mod mcworld;
 mod mojang_options;
 
-use crate::mcworld::extract_zip;
+use crate::mcworld::open_mcworld;
 use tauri::{generate_context, generate_handler, Builder};
 use tauri_plugin_opener::init;
 
@@ -9,7 +9,7 @@ use tauri_plugin_opener::init;
 pub fn run() {
     Builder::default()
         .plugin(init())
-        .invoke_handler(generate_handler![extract_zip])
+        .invoke_handler(generate_handler![open_mcworld])
         .run(generate_context!())
         .expect("error while running tauri application");
 }
