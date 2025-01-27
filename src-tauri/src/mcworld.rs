@@ -57,34 +57,6 @@ pub fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
         children: Vec::new(),
     };
 
-    // Helper function to insert an entry into the directory structure
-    fn insert_entry(dir: &mut ExtractedDirectory, path_parts: &[&str], entry: ExtractedEntry) {
-        if path_parts.is_empty() {
-            return;
-        }
-        let current_part: &str = path_parts[0];
-        if path_parts.len() == 1 {
-            // Base case: Add the file or directory
-            dir.children.push(entry);
-        } else {
-            // Recursive case: Find or create the subdirectory
-            if let Some(ExtractedEntry::Directory(sub_dir)) = dir
-                .children
-                .iter_mut()
-                .find(|e| matches!(e, ExtractedEntry::Directory(d) if d.name == current_part))
-            {
-                insert_entry(sub_dir, &path_parts[1..], entry);
-            } else {
-                let mut new_dir: ExtractedDirectory = ExtractedDirectory {
-                    name: current_part.to_string(),
-                    children: Vec::new(),
-                };
-                insert_entry(&mut new_dir, &path_parts[1..], entry);
-                dir.children.push(ExtractedEntry::Directory(new_dir));
-            }
-        }
-    }
-
     let mut db_keys: Vec<ExtractedFile> = Vec::new();
 
     // Extract files
@@ -172,4 +144,32 @@ pub fn extract_zip(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
 
     // Return the result
     Ok(ExtractionResult { root, db_keys })
+}
+
+// Helper function to insert an entry into the directory structure
+fn insert_entry(dir: &mut ExtractedDirectory, path_parts: &[&str], entry: ExtractedEntry) -> () {
+    if path_parts.is_empty() {
+        return;
+    }
+    let current_part: &str = path_parts[0];
+    if path_parts.len() == 1 {
+        // Base case: Add the file or directory
+        dir.children.push(entry);
+    } else {
+        // Recursive case: Find or create the subdirectory
+        if let Some(ExtractedEntry::Directory(sub_dir)) = dir
+            .children
+            .iter_mut()
+            .find(|e| matches!(e, ExtractedEntry::Directory(d) if d.name == current_part))
+        {
+            insert_entry(sub_dir, &path_parts[1..], entry);
+        } else {
+            let mut new_dir: ExtractedDirectory = ExtractedDirectory {
+                name: current_part.to_string(),
+                children: Vec::new(),
+            };
+            insert_entry(&mut new_dir, &path_parts[1..], entry);
+            dir.children.push(ExtractedEntry::Directory(new_dir));
+        }
+    }
 }
