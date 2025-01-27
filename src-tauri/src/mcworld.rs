@@ -35,16 +35,21 @@ struct ExtractedFile {
     size: usize,
 }
 
-#[command]
-pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
+fn read_zip(zip_data: Vec<u8>) -> Result<ZipArchive<Cursor<Vec<u8>>>, String> {
     // Create a cursor for the zip data
     let cursor: Cursor<Vec<u8>> = Cursor::new(zip_data);
 
     // Open the zip archive
-    let mut archive: ZipArchive<Cursor<Vec<u8>>> = match ZipArchive::new(cursor) {
-        Ok(archive) => archive,
-        Err(err) => return Err(format!("Failed to read zip archive: {}", err)),
-    };
+    match ZipArchive::new(cursor) {
+        Ok(archive) => Ok(archive),
+        Err(err) => Err(format!("Failed to read zip archive: {}", err)),
+    }
+}
+
+#[command]
+pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
+    // Open the zip archive
+    let mut archive: ZipArchive<Cursor<Vec<u8>>> = read_zip(zip_data)?;
 
     // Create a temporary directory to extract the files
     let temp_dir: TempDir =
