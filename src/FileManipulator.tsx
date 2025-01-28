@@ -3,16 +3,18 @@ import { invoke } from '@tauri-apps/api/core';
 import WorldEditor, { type NodeDirectory, type NodeFile, type NodeEntry } from './WorldEditor';
 
 export interface ExtractionResult {
-  root: Omit<ExtractedDirectory, "type">;
+  root: DirChildren;
   db_keys: ExtractedFile[];
 }
 
 export type ExtractedEntry = ExtractedDirectory | ExtractedFile;
 
+export type DirChildren = ExtractedEntry[];
+
 export interface ExtractedDirectory {
   name: string;
   type: 'directory';
-  children: ExtractedEntry[];
+  children: DirChildren;
 }
 
 export interface ExtractedFile {
@@ -22,7 +24,7 @@ export interface ExtractedFile {
 }
 
 export default function FileExtractor() {
-  const [files, setFiles] = useState<ExtractedDirectory | null>(null);
+  const [files, setFiles] = useState<DirChildren | null>(null);
   const [dbKeys, setDbKeys] = useState<ExtractedFile[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +37,7 @@ export default function FileExtractor() {
 
         console.log(result);
 
-        setFiles({ ...result.root, type: "directory" });
+        setFiles(result.root);
         setDbKeys(result.db_keys);
         setError(null);
       } catch (err) {
@@ -47,13 +49,13 @@ export default function FileExtractor() {
     }
   }, []);
 
-  const convertToNodes = useCallback((files: ExtractedDirectory | null): NodeEntry[] => {
+  const convertToNodes = useCallback((files: DirChildren | null): NodeEntry[] => {
     if (!files) return [];
-    return files.children.map((file): NodeEntry => 'children' in file ?
+    return files.map((file): NodeEntry => 'children' in file ?
   {
     name: file.name,
     type: 'directory',
-    children: convertToNodes(file), // Recursively process directories
+    children: convertToNodes(file.children), // Recursively process directories
   } satisfies NodeDirectory :
   {
     name: file.name,
