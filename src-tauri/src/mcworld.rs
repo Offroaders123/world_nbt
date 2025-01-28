@@ -50,9 +50,11 @@ fn read_zip(zip_data: Vec<u8>) -> Result<ZipArchive<Cursor<Vec<u8>>>, String> {
 
 fn read_archive(
     archive: &mut ZipArchive<Cursor<Vec<u8>>>,
-    root: &mut DirChildren,
     temp_path: &Path,
-) -> Result<(), String> {
+) -> Result<DirChildren, String> {
+    // Use a root directory to build the tree
+    let mut root: DirChildren = Vec::new();
+
     // Extract files
     for i in 0..archive.len() {
         let mut file: ZipFile<'_> = match archive.by_index(i) {
@@ -76,7 +78,7 @@ fn read_archive(
         });
 
         // Insert the file into the directory structure
-        insert_entry(root, &path_parts, file_entry);
+        insert_entry(&mut root, &path_parts, file_entry);
 
         // Extract the file
         let out_path: PathBuf = temp_path.join(&file_name);
@@ -91,7 +93,7 @@ fn read_archive(
         copy(&mut file, &mut outfile).map_err(|e| format!("Failed to write file: {}", e))?;
     }
 
-    Ok(())
+    Ok(root)
 }
 
 fn open_db(temp_path: &Path) -> Result<DB, String> {
@@ -115,13 +117,10 @@ pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
         tempdir().map_err(|e| format!("Failed to create temp directory: {}", e))?;
     let temp_path: &Path = temp_dir.path();
 
-    // Use a root directory to build the tree
-    let mut root: DirChildren = Vec::new();
-
     let mut db_keys: Vec<ExtractedFile> = Vec::new();
 
     // Extract files
-    read_archive(&mut archive, &mut root, temp_path)?;
+    let root: DirChildren = read_archive(&mut archive, temp_path)?;
 
     // Open the LevelDB database
     let mut db: DB = open_db(temp_path)?;
