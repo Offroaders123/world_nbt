@@ -117,15 +117,13 @@ pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
         tempdir().map_err(|e| format!("Failed to create temp directory: {}", e))?;
     let temp_path: &Path = temp_dir.path();
 
-    let mut db_keys: Vec<ExtractedFile> = Vec::new();
-
     // Extract files
     let root: DirChildren = read_archive(&mut archive, temp_path)?;
 
     // Open the LevelDB database
     let mut db: DB = open_db(temp_path)?;
 
-    read_entries(&mut db, &mut db_keys);
+    let db_keys: Vec<ExtractedFile> = read_entries(&mut db);
 
     // Close the database
     drop(db);
@@ -134,7 +132,9 @@ pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
     Ok(ExtractionResult { root, db_keys })
 }
 
-fn read_entries(db: &mut DB, db_keys: &mut Vec<ExtractedFile>) -> () {
+fn read_entries(db: &mut DB) -> Vec<ExtractedFile> {
+    let mut db_keys: Vec<ExtractedFile> = Vec::new();
+
     let mut iterator: DBIterator = db.new_iter().expect("Could not create database iterator");
     iterator.seek_to_first();
 
@@ -166,6 +166,8 @@ fn read_entries(db: &mut DB, db_keys: &mut Vec<ExtractedFile>) -> () {
             size,
         });
     }
+
+    db_keys
 }
 
 // Helper function to insert an entry into the directory structure
