@@ -125,6 +125,16 @@ pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
     // Open the LevelDB database
     let mut db: DB = open_db(temp_path)?;
 
+    read_entries(&mut db, &mut db_keys);
+
+    // Close the database
+    drop(db);
+
+    // Return the result
+    Ok(ExtractionResult { root, db_keys })
+}
+
+fn read_entries(db: &mut DB, db_keys: &mut Vec<ExtractedFile>) -> () {
     let mut iterator: DBIterator = db.new_iter().expect("Could not create database iterator");
     iterator.seek_to_first();
 
@@ -156,12 +166,6 @@ pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
             size,
         });
     }
-
-    // Close the database
-    drop(db);
-
-    // Return the result
-    Ok(ExtractionResult { root, db_keys })
 }
 
 // Helper function to insert an entry into the directory structure
