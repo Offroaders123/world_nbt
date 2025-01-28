@@ -50,7 +50,7 @@ fn read_zip(zip_data: Vec<u8>) -> Result<ZipArchive<Cursor<Vec<u8>>>, String> {
 
 fn read_archive(
     archive: &mut ZipArchive<Cursor<Vec<u8>>>,
-    mut root: &mut DirChildren,
+    root: &mut DirChildren,
     temp_path: &Path,
 ) -> Result<(), String> {
     // Extract files
@@ -76,7 +76,7 @@ fn read_archive(
         });
 
         // Insert the file into the directory structure
-        insert_entry(&mut root, &path_parts, file_entry);
+        insert_entry(root, &path_parts, file_entry);
 
         // Extract the file
         let out_path: PathBuf = temp_path.join(&file_name);
