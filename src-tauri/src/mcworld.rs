@@ -48,32 +48,11 @@ fn read_zip(zip_data: Vec<u8>) -> Result<ZipArchive<Cursor<Vec<u8>>>, String> {
     }
 }
 
-fn open_db(temp_path: &Path) -> Result<DB, String> {
-    // Locate the LevelDB directory (e.g., "db")
-    let leveldb_path: PathBuf = temp_path.join("db");
-
-    let mut options: Options = mojang_options();
-    options.create_if_missing = false;
-
-    // Open the LevelDB database
-    DB::open(&leveldb_path, options).map_err(|e| format!("Failed to open LevelDB: {}", e))
-}
-
-#[command]
-pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
-    // Open the zip archive
-    let mut archive: ZipArchive<Cursor<Vec<u8>>> = read_zip(zip_data)?;
-
-    // Create a temporary directory to extract the files
-    let temp_dir: TempDir =
-        tempdir().map_err(|e| format!("Failed to create temp directory: {}", e))?;
-    let temp_path: &Path = temp_dir.path();
-
-    // Use a root directory to build the tree
-    let mut root: DirChildren = Vec::new();
-
-    let mut db_keys: Vec<ExtractedFile> = Vec::new();
-
+fn read_archive(
+    archive: &mut ZipArchive<Cursor<Vec<u8>>>,
+    mut root: &mut DirChildren,
+    temp_path: &Path,
+) -> Result<(), String> {
     // Extract files
     for i in 0..archive.len() {
         let mut file: ZipFile<'_> = match archive.by_index(i) {
@@ -111,6 +90,38 @@ pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
 
         copy(&mut file, &mut outfile).map_err(|e| format!("Failed to write file: {}", e))?;
     }
+
+    Ok(())
+}
+
+fn open_db(temp_path: &Path) -> Result<DB, String> {
+    // Locate the LevelDB directory (e.g., "db")
+    let leveldb_path: PathBuf = temp_path.join("db");
+
+    let mut options: Options = mojang_options();
+    options.create_if_missing = false;
+
+    // Open the LevelDB database
+    DB::open(&leveldb_path, options).map_err(|e| format!("Failed to open LevelDB: {}", e))
+}
+
+#[command]
+pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
+    // Open the zip archive
+    let mut archive: ZipArchive<Cursor<Vec<u8>>> = read_zip(zip_data)?;
+
+    // Create a temporary directory to extract the files
+    let temp_dir: TempDir =
+        tempdir().map_err(|e| format!("Failed to create temp directory: {}", e))?;
+    let temp_path: &Path = temp_dir.path();
+
+    // Use a root directory to build the tree
+    let mut root: DirChildren = Vec::new();
+
+    let mut db_keys: Vec<ExtractedFile> = Vec::new();
+
+    // Extract files
+    read_archive(&mut archive, &mut root, temp_path)?;
 
     // Open the LevelDB database
     let mut db: DB = open_db(temp_path)?;
