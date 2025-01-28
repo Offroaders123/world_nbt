@@ -9,13 +9,13 @@ export interface ExtractionResult {
 
 export type ExtractedEntry = ExtractedDirectory | ExtractedFile;
 
-export type DirChildren = ExtractedEntry[];
-
 export interface ExtractedDirectory {
   name: string;
   type: 'directory';
   children: DirChildren;
 }
+
+export type DirChildren = ExtractedEntry[];
 
 export interface ExtractedFile {
   name: string;

@@ -15,14 +15,6 @@ pub struct ExtractionResult {
     db_keys: Vec<ExtractedFile>,
 }
 
-type DirChildren = Vec<ExtractedEntry>;
-
-#[derive(Serialize)]
-struct ExtractedDirectory {
-    name: String,
-    children: DirChildren,
-}
-
 #[derive(Serialize)]
 #[serde(tag = "type")]
 #[serde(rename_all = "snake_case")]
@@ -32,9 +24,42 @@ enum ExtractedEntry {
 }
 
 #[derive(Serialize)]
+struct ExtractedDirectory {
+    name: String,
+    children: DirChildren,
+}
+
+type DirChildren = Vec<ExtractedEntry>;
+
+#[derive(Serialize)]
 struct ExtractedFile {
     name: String,
     size: usize,
+}
+
+#[command]
+pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
+    // Open the zip archive
+    let mut archive: ZipArchive<Cursor<Vec<u8>>> = read_zip(zip_data)?;
+
+    // Create a temporary directory to extract the files
+    let temp_dir: TempDir =
+        tempdir().map_err(|e| format!("Failed to create temp directory: {}", e))?;
+    let temp_path: &Path = temp_dir.path();
+
+    // Extract files
+    let root: DirChildren = read_archive(&mut archive, temp_path)?;
+
+    // Open the LevelDB database
+    let mut db: DB = open_db(temp_path)?;
+
+    let db_keys: Vec<ExtractedFile> = read_entries(&mut db);
+
+    // Close the database
+    drop(db);
+
+    // Return the result
+    Ok(ExtractionResult { root, db_keys })
 }
 
 fn read_zip(zip_data: Vec<u8>) -> Result<ZipArchive<Cursor<Vec<u8>>>, String> {
@@ -96,6 +121,33 @@ fn read_archive(
     Ok(root)
 }
 
+// Helper function to insert an entry into the directory structure
+fn insert_entry(dir: &mut DirChildren, path_parts: &[&str], entry: ExtractedEntry) -> () {
+    if path_parts.is_empty() {
+        return;
+    }
+    let current_part: &str = path_parts[0];
+    if path_parts.len() == 1 {
+        // Base case: Add the file or directory
+        dir.push(entry);
+    } else {
+        // Recursive case: Find or create the subdirectory
+        if let Some(ExtractedEntry::Directory(sub_dir)) = dir
+            .iter_mut()
+            .find(|e| matches!(e, ExtractedEntry::Directory(d) if d.name == current_part))
+        {
+            insert_entry(&mut sub_dir.children, &path_parts[1..], entry);
+        } else {
+            let mut new_dir: ExtractedDirectory = ExtractedDirectory {
+                name: current_part.to_string(),
+                children: Vec::new(),
+            };
+            insert_entry(&mut new_dir.children, &path_parts[1..], entry);
+            dir.push(ExtractedEntry::Directory(new_dir));
+        }
+    }
+}
+
 fn open_db(temp_path: &Path) -> Result<DB, String> {
     // Locate the LevelDB directory (e.g., "db")
     let leveldb_path: PathBuf = temp_path.join("db");
@@ -105,31 +157,6 @@ fn open_db(temp_path: &Path) -> Result<DB, String> {
 
     // Open the LevelDB database
     DB::open(&leveldb_path, options).map_err(|e| format!("Failed to open LevelDB: {}", e))
-}
-
-#[command]
-pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
-    // Open the zip archive
-    let mut archive: ZipArchive<Cursor<Vec<u8>>> = read_zip(zip_data)?;
-
-    // Create a temporary directory to extract the files
-    let temp_dir: TempDir =
-        tempdir().map_err(|e| format!("Failed to create temp directory: {}", e))?;
-    let temp_path: &Path = temp_dir.path();
-
-    // Extract files
-    let root: DirChildren = read_archive(&mut archive, temp_path)?;
-
-    // Open the LevelDB database
-    let mut db: DB = open_db(temp_path)?;
-
-    let db_keys: Vec<ExtractedFile> = read_entries(&mut db);
-
-    // Close the database
-    drop(db);
-
-    // Return the result
-    Ok(ExtractionResult { root, db_keys })
 }
 
 fn read_entries(db: &mut DB) -> Vec<ExtractedFile> {
@@ -168,31 +195,4 @@ fn read_entries(db: &mut DB) -> Vec<ExtractedFile> {
     }
 
     db_keys
-}
-
-// Helper function to insert an entry into the directory structure
-fn insert_entry(dir: &mut DirChildren, path_parts: &[&str], entry: ExtractedEntry) -> () {
-    if path_parts.is_empty() {
-        return;
-    }
-    let current_part: &str = path_parts[0];
-    if path_parts.len() == 1 {
-        // Base case: Add the file or directory
-        dir.push(entry);
-    } else {
-        // Recursive case: Find or create the subdirectory
-        if let Some(ExtractedEntry::Directory(sub_dir)) = dir
-            .iter_mut()
-            .find(|e| matches!(e, ExtractedEntry::Directory(d) if d.name == current_part))
-        {
-            insert_entry(&mut sub_dir.children, &path_parts[1..], entry);
-        } else {
-            let mut new_dir: ExtractedDirectory = ExtractedDirectory {
-                name: current_part.to_string(),
-                children: Vec::new(),
-            };
-            insert_entry(&mut new_dir.children, &path_parts[1..], entry);
-            dir.push(ExtractedEntry::Directory(new_dir));
-        }
-    }
 }
