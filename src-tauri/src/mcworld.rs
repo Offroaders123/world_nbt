@@ -48,6 +48,17 @@ fn read_zip(zip_data: Vec<u8>) -> Result<ZipArchive<Cursor<Vec<u8>>>, String> {
     }
 }
 
+fn open_db(temp_path: &Path) -> Result<DB, String> {
+    // Locate the LevelDB directory (e.g., "db")
+    let leveldb_path: PathBuf = temp_path.join("db");
+
+    let mut options: Options = mojang_options();
+    options.create_if_missing = false;
+
+    // Open the LevelDB database
+    DB::open(&leveldb_path, options).map_err(|e| format!("Failed to open LevelDB: {}", e))
+}
+
 #[command]
 pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
     // Open the zip archive
@@ -101,15 +112,8 @@ pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
         copy(&mut file, &mut outfile).map_err(|e| format!("Failed to write file: {}", e))?;
     }
 
-    // Locate the LevelDB directory (e.g., "db")
-    let leveldb_path: PathBuf = temp_path.join("db");
-
-    let mut options: Options = mojang_options();
-    options.create_if_missing = false;
-
     // Open the LevelDB database
-    let mut db: DB =
-        DB::open(&leveldb_path, options).map_err(|e| format!("Failed to open LevelDB: {}", e))?;
+    let mut db: DB = open_db(temp_path)?;
 
     let mut iterator: DBIterator = db.new_iter().expect("Could not create database iterator");
     iterator.seek_to_first();
