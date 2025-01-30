@@ -23,7 +23,7 @@ export interface ExtractedFile {
   size: number;
 }
 
-export default function FileExtractor() {
+export default function MCWorldViewer() {
   const [files, setFiles] = useState<DirChildren | null>(null);
   const [dbKeys, setDbKeys] = useState<ExtractedFile[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +76,7 @@ export default function FileExtractor() {
 
   return (
     <div>
-      <h1>Zip Extractor</h1>
+      <h1>Open MCWorld</h1>
       <input type="file" onInput={handleFileChange} accept=".mcworld" />
       {error && <p style={{ color: "red" }}>{error}</p>}
 

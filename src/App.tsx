@@ -1,8 +1,8 @@
-import FileManipulator from "./FileManipulator.tsx";
+import MCWorldViewer from "./MCWorldViewer.tsx";
 import "./App.css";
 
 export default function App() {
   return (
-    <FileManipulator />
+    <MCWorldViewer />
   );
 }
