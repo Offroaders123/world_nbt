@@ -26,25 +26,6 @@ export interface ExtractedFile {
 
 export default function PickerViewer() {
   const [archivePickerEnabled, setArchivePickerEnabled] = useState<boolean>(false);
-
-  return (
-    <>
-      <label>
-        <input
-          type='checkbox'
-          checked={archivePickerEnabled}
-          onChange={event => setArchivePickerEnabled(event.currentTarget.checked)}
-        />
-        MCWorld picker
-      </label>
-      {
-        archivePickerEnabled ? <MCWorldViewer /> : <WorldPathViewer />
-      }
-    </>
-  );
-}
-
-function WorldPathViewer() {
   const [files, setFiles] = useState<DirChildren>([]);
   const [dbKeys, setDbKeys] = useState<ExtractedFile[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -75,33 +56,6 @@ function WorldPathViewer() {
       setDbKeys([]);
     }
   }, []);
-
-  // console.log(files);
-
-  const fileNodes: NodeEntry[] = files.map(convertToNode);
-  const dbNodes: NodeFile[] = dbKeys.map(({ name, size }): NodeFile => ({
-    name,
-    type: 'file',
-    size
-  }));
-
-  return (
-    <div>
-      <h1>Open World Path</h1>
-      <button onClick={handlePathPicker}>Choose world path</button>
-      {/* <input type="file" onInput={handleFileChange} accept=".mcworld" /> */}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {/* Pass default empty arrays if dbKeys or files aren't ready */}
-      <WorldEditor files={fileNodes} dbKeys={dbNodes} />
-    </div>
-  );
-}
-
-function MCWorldViewer() {
-  const [files, setFiles] = useState<DirChildren>([]);
-  const [dbKeys, setDbKeys] = useState<ExtractedFile[]>([]);
-  const [error, setError] = useState<string | null>(null);
 
   const handleFileChange: ChangeEventHandler<HTMLInputElement> = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const file: File | undefined = event.target.files![0];
@@ -135,8 +89,28 @@ function MCWorldViewer() {
 
   return (
     <div>
-      <h1>Open MCWorld</h1>
-      <input type="file" onInput={handleFileChange} accept=".mcworld" />
+      <label>
+        <input
+          type='checkbox'
+          checked={archivePickerEnabled}
+          onChange={event => setArchivePickerEnabled(event.currentTarget.checked)}
+        />
+        MCWorld picker
+      </label>
+      {
+        archivePickerEnabled ? (
+          <>
+            <h1>Open MCWorld</h1>
+            <input type="file" onInput={handleFileChange} accept=".mcworld" />
+          </>
+        )
+          : (
+            <>
+              <h1>Open World Path</h1>
+              <button onClick={handlePathPicker}>Choose world path</button>
+            </>
+          )
+      }
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {/* Pass default empty arrays if dbKeys or files aren't ready */}
