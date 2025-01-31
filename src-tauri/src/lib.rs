@@ -9,8 +9,7 @@ pub fn run() {
     Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(generate_handler![open_world_path])
-        .invoke_handler(generate_handler![open_mcworld])
+        .invoke_handler(generate_handler![open_world_path, open_mcworld])
         .run(generate_context!())
         .expect("error while running tauri application");
 }
