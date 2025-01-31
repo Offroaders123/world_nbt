@@ -1,4 +1,4 @@
-use std::fs::{create_dir_all, File};
+use std::fs::{create_dir_all, read_dir, DirEntry, File};
 use std::io::{copy, Cursor};
 use std::path::{Path, PathBuf};
 
@@ -51,9 +51,41 @@ pub fn open_world_path(path: &str) -> Result<ExtractionResult, String> {
 }
 
 fn read_root_from_world_path(world_path: &Path) -> Result<DirChildren, String> {
-    let root: DirChildren = Vec::new();
+    if !world_path.is_dir() {
+        return Err(format!("Invalid directory: {:?}", world_path));
+    }
+
+    let mut root: DirChildren = Vec::new();
+
+    read_dir_recursive(world_path, &mut root)
+        .map_err(|e| format!("Failed to read directory: {}", e))?;
 
     Ok(root)
+}
+
+fn read_dir_recursive(dir: &Path, root: &mut DirChildren) -> Result<(), String> {
+    for entry in read_dir(dir).map_err(|e| format!("Read dir error: {}", e))? {
+        let entry: DirEntry = entry.map_err(|e| format!("Path error: {}", e))?;
+        let path: PathBuf = entry.path();
+        let name: String = entry.file_name().to_string_lossy().to_string();
+
+        if path.is_dir() {
+            let mut children: DirChildren = Vec::new();
+            read_dir_recursive(&path, &mut children)?;
+            root.push(ExtractedEntry::Directory(ExtractedDirectory {
+                name,
+                children,
+            }));
+        } else {
+            let size: usize = path
+                .metadata()
+                .map_err(|e| format!("Path metadata error: {}", e))?
+                .len() as usize;
+            root.push(ExtractedEntry::File(ExtractedFile { name, size }));
+        }
+    }
+
+    Ok(())
 }
 
 #[command]
