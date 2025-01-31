@@ -23,6 +23,48 @@ export interface ExtractedFile {
   size: number;
 }
 
+export function WorldPathViewer() {
+  const [files, setFiles] = useState<DirChildren | null>(null);
+  const [dbKeys, setDbKeys] = useState<ExtractedFile[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const convertToNodes = useCallback((files: DirChildren | null): NodeEntry[] => {
+    if (!files) return [];
+    return files.map((file): NodeEntry => 'children' in file ?
+      {
+        name: file.name,
+        type: 'directory',
+        children: convertToNodes(file.children), // Recursively process directories
+      } satisfies NodeDirectory :
+      {
+        name: file.name,
+        type: 'file',
+        size: file.size, // Directories don't have content
+      } satisfies NodeFile
+    );
+  }, []);
+
+  // console.log(files);
+
+  const fileNodes: NodeEntry[] = convertToNodes(files);
+  const dbNodes: NodeFile[] = dbKeys.map(({ name, size }): NodeFile => ({
+    name,
+    type: 'file',
+    size
+  }));
+
+  return (
+    <div>
+      <h1>Open World Path</h1>
+      {/* <input type="file" onInput={handleFileChange} accept=".mcworld" /> */}
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
+      {/* Pass default empty arrays if dbKeys or files aren't ready */}
+      <WorldEditor files={fileNodes} dbKeys={dbNodes} />
+    </div>
+  );
+}
+
 export default function MCWorldViewer() {
   const [files, setFiles] = useState<DirChildren | null>(null);
   const [dbKeys, setDbKeys] = useState<ExtractedFile[]>([]);
@@ -84,6 +126,15 @@ export default function MCWorldViewer() {
       <WorldEditor files={fileNodes} dbKeys={dbNodes} />
     </div>
   );
+}
+
+/**
+ * Only usable in a Tauri context, will reject otherwise.
+ */
+async function open_world_path(path: string): Promise<ExtractionResult> {
+  return await invoke<ExtractionResult>("open_world_path", {
+    worldPath: path
+  })
 }
 
 /**
