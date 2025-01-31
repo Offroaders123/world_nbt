@@ -38,8 +38,8 @@ struct ExtractedFile {
 }
 
 #[command]
-pub fn open_world_path(path: &str) -> Result<ExtractionResult, String> {
-    let world_path: &Path = Path::new(path);
+pub fn open_world_path(path: String) -> Result<ExtractionResult, String> {
+    let world_path: &Path = Path::new(&path);
 
     // Extract files
     let root: DirChildren = read_root_from_world_path(world_path)?;

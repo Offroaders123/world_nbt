@@ -1,5 +1,6 @@
-import { type ChangeEvent, type ChangeEventHandler, useState, useCallback } from 'react';
+import { type ChangeEvent, type ChangeEventHandler, useState, useCallback, type MouseEvent, type MouseEventHandler } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-dialog';
 import WorldEditor, { type NodeDirectory, type NodeFile, type NodeEntry } from './WorldEditor';
 
 export interface ExtractionResult {
@@ -28,6 +29,33 @@ export function WorldPathViewer() {
   const [dbKeys, setDbKeys] = useState<ExtractedFile[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const handlePathPicker: MouseEventHandler<HTMLButtonElement> = useCallback(async (_event: MouseEvent<HTMLButtonElement>) => {
+    try {
+      const selectedPath: string | null = await open({
+        directory: true, // Ensures only directories can be selected
+        multiple: false, // Single directory selection
+      });
+
+      if (selectedPath === null) return;
+
+      console.log("Selected directory:", selectedPath);
+
+      // Send the path to Rust backend for processing
+      const result: ExtractionResult = await open_world_path(selectedPath);
+
+      console.log(result);
+
+      setFiles(result.root);
+      setDbKeys(result.db_keys);
+      setError(null);
+    } catch (err) {
+      setError(`Failed to process the file: ${err}`);
+      console.error(err);
+      setFiles([]);
+      setDbKeys([]);
+    }
+  }, []);
+
   // console.log(files);
 
   const fileNodes: NodeEntry[] = files.map(convertToNode);
@@ -40,6 +68,7 @@ export function WorldPathViewer() {
   return (
     <div>
       <h1>Open World Path</h1>
+      <button onClick={handlePathPicker}>Choose world path</button>
       {/* <input type="file" onInput={handleFileChange} accept=".mcworld" /> */}
       {error && <p style={{ color: "red" }}>{error}</p>}
 
@@ -115,7 +144,7 @@ function convertToNode(file: ExtractedEntry): NodeEntry {
  */
 async function open_world_path(path: string): Promise<ExtractionResult> {
   return await invoke<ExtractionResult>("open_world_path", {
-    worldPath: path
+    path
   })
 }
 
