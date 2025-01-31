@@ -1,8 +1,8 @@
-import { WorldPathViewer } from "./MCWorldViewer.tsx";
+import PickerViewer from "./MCWorldViewer.tsx";
 import "./App.css";
 
 export default function App() {
   return (
-    <WorldPathViewer />
+    <PickerViewer />
   );
 }

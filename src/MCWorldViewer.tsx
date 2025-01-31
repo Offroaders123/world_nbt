@@ -24,7 +24,27 @@ export interface ExtractedFile {
   size: number;
 }
 
-export function WorldPathViewer() {
+export default function PickerViewer() {
+  const [archivePickerEnabled, setArchivePickerEnabled] = useState<boolean>(false);
+
+  return (
+    <>
+      <label>
+        <input
+          type='checkbox'
+          checked={archivePickerEnabled}
+          onChange={event => setArchivePickerEnabled(event.currentTarget.checked)}
+        />
+        MCWorld picker
+      </label>
+      {
+        archivePickerEnabled ? <MCWorldViewer /> : <WorldPathViewer />
+      }
+    </>
+  );
+}
+
+function WorldPathViewer() {
   const [files, setFiles] = useState<DirChildren>([]);
   const [dbKeys, setDbKeys] = useState<ExtractedFile[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +98,7 @@ export function WorldPathViewer() {
   );
 }
 
-export default function MCWorldViewer() {
+function MCWorldViewer() {
   const [files, setFiles] = useState<DirChildren>([]);
   const [dbKeys, setDbKeys] = useState<ExtractedFile[]>([]);
   const [error, setError] = useState<string | null>(null);
