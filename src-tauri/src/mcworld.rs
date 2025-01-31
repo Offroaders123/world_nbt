@@ -45,7 +45,7 @@ pub fn open_db_dir(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
     let temp_path: &Path = temp_dir.path();
 
     // Extract files
-    let root: DirChildren = read_root(zip_data, temp_path)?;
+    let root: DirChildren = read_root_from_archive(zip_data, temp_path)?;
 
     let db_keys: Vec<ExtractedFile> = read_db_keys(temp_path)?;
 
@@ -61,7 +61,7 @@ pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
     let temp_path: &Path = temp_dir.path();
 
     // Extract files
-    let root: DirChildren = read_root(zip_data, temp_path)?;
+    let root: DirChildren = read_root_from_archive(zip_data, temp_path)?;
 
     let db_keys: Vec<ExtractedFile> = read_db_keys(temp_path)?;
 
@@ -69,7 +69,7 @@ pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
     Ok(ExtractionResult { root, db_keys })
 }
 
-fn read_root(zip_data: Vec<u8>, temp_path: &Path) -> Result<DirChildren, String> {
+fn read_root_from_archive(zip_data: Vec<u8>, temp_path: &Path) -> Result<DirChildren, String> {
     // Open the zip archive
     let mut archive: ZipArchive<Cursor<Vec<u8>>> = read_zip(zip_data)?;
 
