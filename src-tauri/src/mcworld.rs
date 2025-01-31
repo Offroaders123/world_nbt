@@ -39,17 +39,32 @@ struct ExtractedFile {
 
 #[command]
 pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
-    // Open the zip archive
-    let mut archive: ZipArchive<Cursor<Vec<u8>>> = read_zip(zip_data)?;
-
     // Create a temporary directory to extract the files
     let temp_dir: TempDir =
         tempdir().map_err(|e| format!("Failed to create temp directory: {}", e))?;
     let temp_path: &Path = temp_dir.path();
 
     // Extract files
+    let root: DirChildren = read_root(zip_data, temp_path)?;
+
+    let db_keys: Vec<ExtractedFile> = read_db_keys(temp_path)?;
+
+    // Return the result
+    Ok(ExtractionResult { root, db_keys })
+}
+
+fn read_root(zip_data: Vec<u8>, temp_path: &Path) -> Result<DirChildren, String> {
+    // Open the zip archive
+    let mut archive: ZipArchive<Cursor<Vec<u8>>> = read_zip(zip_data)?;
+
+    // Extract files
     let root: DirChildren = read_archive(&mut archive, temp_path)?;
 
+    // Return the result
+    Ok(root)
+}
+
+fn read_db_keys(temp_path: &Path) -> Result<Vec<ExtractedFile>, String> {
     // Open the LevelDB database
     let mut db: DB = open_db(temp_path)?;
 
@@ -59,7 +74,7 @@ pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
     drop(db);
 
     // Return the result
-    Ok(ExtractionResult { root, db_keys })
+    Ok(db_keys)
 }
 
 fn read_zip(zip_data: Vec<u8>) -> Result<ZipArchive<Cursor<Vec<u8>>>, String> {
