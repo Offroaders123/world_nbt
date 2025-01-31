@@ -24,7 +24,7 @@ export interface ExtractedFile {
 }
 
 export function WorldPathViewer() {
-  const [files, setFiles] = useState<DirChildren | null>(null);
+  const [files, setFiles] = useState<DirChildren>([]);
   const [dbKeys, setDbKeys] = useState<ExtractedFile[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,7 +50,7 @@ export function WorldPathViewer() {
 }
 
 export default function MCWorldViewer() {
-  const [files, setFiles] = useState<DirChildren | null>(null);
+  const [files, setFiles] = useState<DirChildren>([]);
   const [dbKeys, setDbKeys] = useState<ExtractedFile[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,7 +69,7 @@ export default function MCWorldViewer() {
       } catch (err) {
         setError(`Failed to process the file: ${err}`);
         console.error(err);
-        setFiles(null);
+        setFiles([]);
         setDbKeys([]);
       }
     }
@@ -96,8 +96,7 @@ export default function MCWorldViewer() {
   );
 }
 
-function convertToNodes(files: DirChildren | null): NodeEntry[] {
-  if (!files) return [];
+function convertToNodes(files: DirChildren): NodeEntry[] {
   return files.map((file): NodeEntry => 'children' in file ?
     {
       name: file.name,
