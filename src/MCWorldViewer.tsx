@@ -30,7 +30,7 @@ export function WorldPathViewer() {
 
   // console.log(files);
 
-  const fileNodes: NodeEntry[] = convertToNodes(files);
+  const fileNodes: NodeEntry[] = files.map(convertToNode);
   const dbNodes: NodeFile[] = dbKeys.map(({ name, size }): NodeFile => ({
     name,
     type: 'file',
@@ -77,7 +77,7 @@ export default function MCWorldViewer() {
 
   // console.log(files);
 
-  const fileNodes: NodeEntry[] = convertToNodes(files);
+  const fileNodes: NodeEntry[] = files.map(convertToNode);
   const dbNodes: NodeFile[] = dbKeys.map(({ name, size }): NodeFile => ({
     name,
     type: 'file',
@@ -96,19 +96,18 @@ export default function MCWorldViewer() {
   );
 }
 
-function convertToNodes(files: DirChildren): NodeEntry[] {
-  return files.map((file): NodeEntry => 'children' in file ?
+function convertToNode(file: ExtractedEntry): NodeEntry {
+  return 'children' in file ?
     {
       name: file.name,
       type: 'directory',
-      children: convertToNodes(file.children), // Recursively process directories
+      children: file.children.map(convertToNode), // Recursively process directories
     } satisfies NodeDirectory :
     {
       name: file.name,
       type: 'file',
       size: file.size, // Directories don't have content
-    } satisfies NodeFile
-  );
+    } satisfies NodeFile;
 }
 
 /**
