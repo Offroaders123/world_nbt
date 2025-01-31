@@ -38,7 +38,7 @@ struct ExtractedFile {
 }
 
 #[command]
-pub fn open_db_dir(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
+pub fn open_world_path(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
     // Create a temporary directory to extract the files
     let temp_dir: TempDir =
         tempdir().map_err(|e| format!("Failed to create temp directory: {}", e))?;
