@@ -28,22 +28,6 @@ export function WorldPathViewer() {
   const [dbKeys, setDbKeys] = useState<ExtractedFile[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const convertToNodes = useCallback((files: DirChildren | null): NodeEntry[] => {
-    if (!files) return [];
-    return files.map((file): NodeEntry => 'children' in file ?
-      {
-        name: file.name,
-        type: 'directory',
-        children: convertToNodes(file.children), // Recursively process directories
-      } satisfies NodeDirectory :
-      {
-        name: file.name,
-        type: 'file',
-        size: file.size, // Directories don't have content
-      } satisfies NodeFile
-    );
-  }, []);
-
   // console.log(files);
 
   const fileNodes: NodeEntry[] = convertToNodes(files);
@@ -91,22 +75,6 @@ export default function MCWorldViewer() {
     }
   }, []);
 
-  const convertToNodes = useCallback((files: DirChildren | null): NodeEntry[] => {
-    if (!files) return [];
-    return files.map((file): NodeEntry => 'children' in file ?
-  {
-    name: file.name,
-    type: 'directory',
-    children: convertToNodes(file.children), // Recursively process directories
-  } satisfies NodeDirectory :
-  {
-    name: file.name,
-    type: 'file',
-    size: file.size, // Directories don't have content
-  } satisfies NodeFile
-);
-  }, []);
-
   // console.log(files);
 
   const fileNodes: NodeEntry[] = convertToNodes(files);
@@ -125,6 +93,22 @@ export default function MCWorldViewer() {
       {/* Pass default empty arrays if dbKeys or files aren't ready */}
       <WorldEditor files={fileNodes} dbKeys={dbNodes} />
     </div>
+  );
+}
+
+function convertToNodes(files: DirChildren | null): NodeEntry[] {
+  if (!files) return [];
+  return files.map((file): NodeEntry => 'children' in file ?
+    {
+      name: file.name,
+      type: 'directory',
+      children: convertToNodes(file.children), // Recursively process directories
+    } satisfies NodeDirectory :
+    {
+      name: file.name,
+      type: 'file',
+      size: file.size, // Directories don't have content
+    } satisfies NodeFile
   );
 }
 
