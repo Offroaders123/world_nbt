@@ -4,22 +4,14 @@ import { open } from '@tauri-apps/plugin-dialog';
 import WorldEditor, { type NodeDirectory, type NodeFile, type NodeEntry, type NodeEntries } from './WorldEditor';
 
 export interface ExtractionResult {
-  root: DirChildren;
-  db_keys: ExtractedFile[];
+  root: NodeEntries;
+  db_keys: NodeFile[];
 }
-
-export type ExtractedEntry = NodeEntry;
-
-export type ExtractedDirectory = NodeDirectory;
-
-export type DirChildren = NodeEntries;
-
-export type ExtractedFile = NodeFile;
 
 export default function PickerViewer() {
   const [archivePickerEnabled, setArchivePickerEnabled] = useState<boolean>(false);
-  const [files, setFiles] = useState<DirChildren>([]);
-  const [dbKeys, setDbKeys] = useState<ExtractedFile[]>([]);
+  const [files, setFiles] = useState<NodeEntries>([]);
+  const [dbKeys, setDbKeys] = useState<NodeFile[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const handlePathPicker: MouseEventHandler<HTMLButtonElement> = useCallback(async (_event: MouseEvent<HTMLButtonElement>) => {
@@ -111,7 +103,7 @@ export default function PickerViewer() {
   );
 }
 
-function convertToNode(file: ExtractedEntry): NodeEntry {
+function convertToNode(file: NodeEntry): NodeEntry {
   return 'children' in file ?
     {
       name: file.name,
