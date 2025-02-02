@@ -1,7 +1,7 @@
 import { type ChangeEvent, type ChangeEventHandler, useState, useCallback, type MouseEvent, type MouseEventHandler } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
-import WorldEditor, { type NodeDirectory, type NodeFile, type NodeEntry, type NodeEntries } from './WorldEditor';
+import WorldEditor, { type NodeFile, type NodeEntries } from './WorldEditor';
 
 export interface ExtractionResult {
   root: NodeEntries;
@@ -64,13 +64,6 @@ export default function PickerViewer() {
 
   // console.log(files);
 
-  const fileNodes: NodeEntry[] = files.map(convertToNode);
-  const dbNodes: NodeFile[] = dbKeys.map(({ name, size }): NodeFile => ({
-    name,
-    type: 'file',
-    size
-  }));
-
   return (
     <div>
       <label>
@@ -98,23 +91,9 @@ export default function PickerViewer() {
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {/* Pass default empty arrays if dbKeys or files aren't ready */}
-      <WorldEditor files={fileNodes} dbKeys={dbNodes} />
+      <WorldEditor files={files} dbKeys={dbKeys} />
     </div>
   );
-}
-
-function convertToNode(file: NodeEntry): NodeEntry {
-  return 'children' in file ?
-    {
-      name: file.name,
-      type: 'directory',
-      children: file.children.map(convertToNode), // Recursively process directories
-    } satisfies NodeDirectory :
-    {
-      name: file.name,
-      type: 'file',
-      size: file.size, // Directories don't have content
-    } satisfies NodeFile;
 }
 
 /**
