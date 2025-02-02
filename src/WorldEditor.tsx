@@ -7,8 +7,12 @@ export type NodeEntry = NodeDirectory | NodeFile;
 export interface NodeDirectory {
   name: string;
   type: 'directory';
-  children: NodeEntry[]; // For directories
+  children: NodeEntries; // For directories
 };
+
+export type NodeEntries = NodeEntry[];
+
+export type NodeFiles = NodeFile[];
 
 export interface NodeFile {
   name: string;
@@ -16,7 +20,7 @@ export interface NodeFile {
   size: number; // For files only
 };
 
-function FileTree({ data, onSelect }: { data: NodeEntry[]; onSelect: (node: NodeEntry) => void }) {
+function FileTree({ data, onSelect }: { data: NodeEntries; onSelect: (node: NodeEntry) => void }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const toggleExpand = useCallback((name: string) => {
@@ -60,7 +64,7 @@ function FileTree({ data, onSelect }: { data: NodeEntry[]; onSelect: (node: Node
 };
 
 interface DbFolderProps {
-  children: NodeEntry[];
+  children: NodeEntries;
   onSelect: (node: NodeEntry) => void;
 }
 
@@ -98,13 +102,13 @@ function DbFolder({ children = [], onSelect }: DbFolderProps) {
 };
 
 export interface WorldEditorProps {
-  files: NodeEntry[]; // Array of file nodes
-  dbKeys: NodeFile[]; // List of LevelDB keys
+  files: NodeEntries; // Array of file nodes
+  dbKeys: NodeFiles; // List of LevelDB keys
 }
 
 export default function WorldEditor({ files = [], dbKeys = [] }: WorldEditorProps) {
   const [selectedFile, setSelectedFile] = useState<NodeEntry | null>(null);
-  const [worldData, setWorldData] = useState<NodeEntry[]>([]);
+  const [worldData, setWorldData] = useState<NodeEntries>([]);
 
   // console.log(dbKeys);
 
@@ -119,7 +123,7 @@ export default function WorldEditor({ files = [], dbKeys = [] }: WorldEditorProp
 
   useEffect(() => {
     // Combine files and dbFolder into worldData, but only if there's a change
-    const newWorldData: NodeEntry[] = [...files.filter(entry => entry.name !== "db"), dbFolder];
+    const newWorldData: NodeEntries = [...files.filter(entry => entry.name !== "db"), dbFolder];
     if (JSON.stringify(newWorldData) !== JSON.stringify(worldData)) {
       setWorldData(newWorldData);
     }
