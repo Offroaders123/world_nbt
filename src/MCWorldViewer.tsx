@@ -1,28 +1,20 @@
 import { type ChangeEvent, type ChangeEventHandler, useState, useCallback, type MouseEvent, type MouseEventHandler } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
-import WorldEditor, { type NodeDirectory, type NodeFile, type NodeEntry } from './WorldEditor';
+import WorldEditor, { type NodeDirectory, type NodeFile, type NodeEntry, type NodeEntries } from './WorldEditor';
 
 export interface ExtractionResult {
   root: DirChildren;
   db_keys: ExtractedFile[];
 }
 
-export type ExtractedEntry = ExtractedDirectory | ExtractedFile;
+export type ExtractedEntry = NodeEntry;
 
-export interface ExtractedDirectory {
-  name: string;
-  type: 'directory';
-  children: DirChildren;
-}
+export type ExtractedDirectory = NodeDirectory;
 
-export type DirChildren = ExtractedEntry[];
+export type DirChildren = NodeEntries;
 
-export interface ExtractedFile {
-  name: string;
-  type: 'file';
-  size: number;
-}
+export type ExtractedFile = NodeFile;
 
 export default function PickerViewer() {
   const [archivePickerEnabled, setArchivePickerEnabled] = useState<boolean>(false);
