@@ -1,4 +1,4 @@
-use std::fs::{create_dir_all, read_dir, DirEntry, File};
+use std::fs::{create_dir_all, read, read_dir, DirEntry, File};
 use std::io::{copy, Cursor};
 use std::path::{Path, PathBuf};
 
@@ -89,7 +89,10 @@ fn read_dir_recursive(dir: &Path, root: &mut DirChildren) -> Result<(), String> 
 }
 
 #[command]
-pub fn open_mcworld(zip_data: Vec<u8>) -> Result<ExtractionResult, String> {
+pub fn open_mcworld(path: String) -> Result<ExtractionResult, String> {
+    let zip_data: Vec<u8> =
+        read(path).map_err(|e| format!("Failed to open MCWorld file: {}", e))?;
+
     // Create a temporary directory to extract the files
     let temp_dir: TempDir =
         tempdir().map_err(|e| format!("Failed to create temp directory: {}", e))?;

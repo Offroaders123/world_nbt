@@ -1,4 +1,4 @@
-import { type ChangeEvent, type ChangeEventHandler, useState, useCallback, type MouseEvent, type MouseEventHandler } from 'react';
+import { useState, useCallback, type MouseEvent, type MouseEventHandler } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import WorldEditor, { type NodeFile, type NodeEntries } from './WorldEditor';
@@ -14,7 +14,7 @@ export default function PickerViewer() {
   const [dbKeys, setDbKeys] = useState<NodeFile[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const handlePathPicker: MouseEventHandler<HTMLButtonElement> = useCallback(async (_event: MouseEvent<HTMLButtonElement>) => {
+  const handleWorldPathPicker: MouseEventHandler<HTMLButtonElement> = useCallback(async (_event: MouseEvent<HTMLButtonElement>) => {
     try {
       const selectedPath: string | null = await open({
         directory: true, // Ensures only directories can be selected
@@ -41,12 +41,16 @@ export default function PickerViewer() {
     }
   }, []);
 
-  const handleFileChange: ChangeEventHandler<HTMLInputElement> = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
-    const file: File | undefined = event.target.files![0];
-    if (file) {
+  const handleMCWorldPicker: MouseEventHandler<HTMLButtonElement> = useCallback(async (_event: MouseEvent<HTMLButtonElement>) => {
       try {
-        const arrayBuffer: ArrayBuffer = await file.arrayBuffer();
-        const result: ExtractionResult = await open_mcworld(arrayBuffer);
+        const selectedPath: string | null = await open({
+          directory: false,
+          multiple: false
+        });
+
+        if (selectedPath === null) return;
+
+        const result: ExtractionResult = await open_mcworld(selectedPath);
 
         console.log(result);
 
@@ -58,7 +62,6 @@ export default function PickerViewer() {
         console.error(err);
         setFiles([]);
         setDbKeys([]);
-      }
     }
   }, []);
 
@@ -78,13 +81,13 @@ export default function PickerViewer() {
         archivePickerEnabled ? (
           <>
             <h1>Open MCWorld</h1>
-            <input type="file" onInput={handleFileChange} accept=".mcworld" />
+            <button onClick={handleMCWorldPicker}>Choose MCWorld file</button>
           </>
         )
           : (
             <>
               <h1>Open World Path</h1>
-              <button onClick={handlePathPicker}>Choose world path</button>
+              <button onClick={handleWorldPathPicker}>Choose world path</button>
             </>
           )
       }
@@ -108,8 +111,8 @@ async function open_world_path(path: string): Promise<ExtractionResult> {
 /**
  * Only usable in a Tauri context, will reject otherwise.
  */
-async function open_mcworld(arrayBuffer: ArrayBuffer): Promise<ExtractionResult> {
+async function open_mcworld(path: string): Promise<ExtractionResult> {
   return await invoke<ExtractionResult>("open_mcworld", {
-    zipData: Array.from(new Uint8Array(arrayBuffer))
+    path
   })
 }
